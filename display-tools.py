@@ -148,7 +148,7 @@ units_px = {
     ],
 }
 
-def image_string(number):
+def image_99(number):
     number = int(number)
     if not 0 <= number <= 99:
         # Return an error cross
