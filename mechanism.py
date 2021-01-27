@@ -1,7 +1,7 @@
 import math, utime
 
 
-### These methods return functions for use inside the mechanism class ###
+### These meta-functions return functions for use inside the mechanism class ###
 
 def linear_interpolation(points, wrapping=True, scale_y = 1):
     """
@@ -79,24 +79,35 @@ def sine_wave(amplitude=100, period=1000, offset=0):
         return math.sin((x-offset)/period*2*math.pi) * amplitude
     return function
 
+def block_wave(amplitude=100, period=1000, offset=0):
+    def function(ticks):
+        phase = ticks % period
+        if offset < phase < offset + period//2:
+            return amplitude
+        else:
+            return -amplitude
+    return function
+
 ### Advanced timer class to use together with the Mechanism class ###
 class AMHTimer():
     """
-    Configurable timer that you can start, reverse, stop and pause.
-    By default it counts miliseconds, but you can speed it up,
+    A configurable timer which you can start, reverse, stop and pause.
+    By default, it counts milliseconds, but you can speed it up,
     Slow it down or accelerate it!
     You can also set the time and reset it.
     You can even run it in reverse, so you can count down until 0.
     It always returns integers, even when you slow it way down.
 
-    Author: Antons Mindstorms Hacks
-    
-    Usage
-    my_timer = AMHTimer():
-    my_timer.rate = 500 # set the rate to 500 ticks/s. That is half the normal rate
-    my_timer.acceleration = 100 # Increase the rate by 100 ticks / second squared
-    my_timer.reset()
-    now = mytimer.time
+    Author: 
+        Anton's Mindstorms Hacks
+
+    Usage:
+        my_timer = AMHTimer():
+        my_timer.rate = 500  # set the rate to 500 ticks/s. That is half the normal rate
+        my_timer.acceleration = 100  # Increase the rate by 100 ticks / second squared
+        my_timer.reset()  # Reset to zero. Doesn't change running/paused state
+        now = mytimer.time  # Read the time
+        mytimer.time = 5000  #Set the time
     """
     def __init__(self, rate=1000, acceleration=0):
         self.running = True
@@ -159,7 +170,7 @@ class AMHTimer():
             self.start()
 
     @property
-    def acceleration(self, setting):
+    def acceleration(self):
         return self.__accel_factor * 1000000
 
     @acceleration.setter
@@ -175,6 +186,27 @@ class AMHTimer():
 ### This is the central mechanism class that animates the robot ###
 
 class Mechanism():
+    """
+    The class helps to control multiple motors in a tight loop python program.
+
+    Args:
+        motors: list of motor objects. Can be hub.port.X.motor or Motor('X')
+        motor_functions: list of functions that take one argument and calculate motor positions
+    
+    Optional Args:
+        reset_zero: bolean, resets the 0 point of the relative encoder to the absolute encoder position
+        ramp_pwm: int, a number to limit maximum pwm per tick when starting. 0.5 is a good value for a slow ramp.
+        Kp: float, proportional feedback factor for motor power.
+
+    Returns:
+        None.
+
+    Usage:
+        my_mechanism = Mechanism([Motor('A'), Motor('B')], [func_a, func_b])
+        timer = AMHTimer()
+        while True:
+            my_mechanism.update_motor_pwms(timer.time)
+    """
     def __init__(self, motors, motor_functions, reset_zero=True, ramp_pwm=100, Kp=1.2):
         # Allow for both hub.port.X.motor and Motor objects:
         self.motors = [m._motor_wrapper.motor if '_motor_wrapper' in dir(m) else m for m in motors]
