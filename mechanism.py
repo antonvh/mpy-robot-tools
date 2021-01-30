@@ -99,7 +99,7 @@ class AMHTimer():
     It always returns integers, even when you slow it way down.
 
     Author: 
-        Anton's Mindstorms Hacks
+        Anton's Mindstorms Hacks - https://antonsmindstorms.com
 
     Usage:
         my_timer = AMHTimer():
@@ -188,6 +188,9 @@ class AMHTimer():
 class Mechanism():
     """
     The class helps to control multiple motors in a tight loop python program.
+
+    Author: 
+        Anton's Mindstorms Hacks - https://antonsmindstorms.com
 
     Args:
         motors: list of motor objects. Can be hub.port.X.motor or Motor('X')
