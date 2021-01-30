@@ -1,5 +1,5 @@
 _ = 0
-O = 6
+O = 8
 B = 9
 
 tens_px = {
@@ -165,4 +165,6 @@ def image_99(number):
         return ":".join(["".join([str(n) for n in r]) for r in result_px])
 
 if __name__ == "__main__":
-    print(image_string(47))
+    f = open("numbers.txt", 'w')
+    for i in range(100):
+        f.write(image_99(i)+"\n")
