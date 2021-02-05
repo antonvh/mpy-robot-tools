@@ -184,18 +184,17 @@ class AMHTimer():
             
 
 ### This is the central mechanism class that animates the robot ###
-
 class Mechanism():
     """
     The class helps to control multiple motors in a tight loop python program.
 
-    Author: 
+    Author:
         Anton's Mindstorms Hacks - https://antonsmindstorms.com
 
     Args:
         motors: list of motor objects. Can be hub.port.X.motor or Motor('X')
         motor_functions: list of functions that take one argument and calculate motor positions
-    
+
     Optional Args:
         reset_zero: bolean, resets the 0 point of the relative encoder to the absolute encoder position
         ramp_pwm: int, a number to limit maximum pwm per tick when starting. 0.5 is a good value for a slow ramp.
@@ -211,15 +210,17 @@ class Mechanism():
             my_mechanism.update_motor_pwms(timer.time)
     """
     def __init__(self, motors, motor_functions, reset_zero=True, ramp_pwm=100, Kp=1.2):
-        # Allow for both hub.port.X.motor and Motor objects:
+        # Allow for both hub.port.X.motor and Motor('X') objects:
         self.motors = [m._motor_wrapper.motor if '_motor_wrapper' in dir(m) else m for m in motors]
         self.motor_functions = motor_functions
         self.ramp_pwm = ramp_pwm
         self.Kp = Kp
-
         if reset_zero:
+            self.relative_position_reset()
+
+    def relative_position_reset(self):
             # Set degrees counted of all motors according to absolute 0
-            for motor in motors:
+            for motor in self.motors:
                 absolute_position = motor.get()[2]
                 if absolute_position > 180:
                     absolute_position -= 360
@@ -232,19 +233,48 @@ class Mechanism():
         return min(max(int(f),-100),100)
 
     def update_motor_pwms(self, ticks):
+        # Proportional controller toward disered motor positions at ticks
         for motor, motor_function in zip(self.motors, self.motor_functions):
             target_position = motor_function(ticks)
             current_position = motor.get()[1]
             power = self.float_to_motorpower((target_position-current_position)* self.Kp)
             if self.ramp_pwm < 100:
+                # Limit pwm for a smooth start
                 max_power = int(self.ramp_pwm*(abs(ticks)))
                 if power < 0:
                     power = max(power, -max_power)
                 else:
                     power = min( power, max_power)
-            
-            motor.pwm( power )    
 
+            motor.pwm( power )
+
+    def shortest_path_reset(self, ticks=0, speed=20):
+        # Get motors in position smoothly before starting the control loop
+
+        # Reset internal tacho to range -180,180
+        self.relative_position_reset()
+
+        # Run all motors to a ticks position with shortest path
+        for motor, motor_function in zip(self.motors, self.motor_functions):
+            target_position = int(motor_function(ticks))
+            current_position = motor.get()[1]
+            # Reset internal tacho so next move is shortest path
+            if target_position - current_position > 180:
+                motor.preset(current_position + 360)
+            if target_position - current_position < -180:
+                motor.preset(current_position - 360)
+            # Start the manouver
+            motor.run_to_position(target_position, speed)
+        
+        # Give the motors time to spin up
+        utime.sleep_ms(50)
+        # Check all motors pwms until all maneuvers have ended
+        while True:
+            pwms = []
+            for motor in self.motors:
+                pwms += [motor.get()[3]]
+            if not any(pwms): break
+        
     def stop(self):
         for motor in self.motors:
             motor.pwm( 0 )
