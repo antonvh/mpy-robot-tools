@@ -181,7 +181,7 @@ class AMHTimer():
             self.__speed_factor = self.rate / 1000
             self.__accel_factor = setting / 1000000
             self.start()
-            
+
 
 ### This is the central mechanism class that animates the robot ###
 class Mechanism():
@@ -277,7 +277,7 @@ class Mechanism():
         
     def stop(self):
         for motor in self.motors:
-            motor.pwm( 0 )
+            motor.pwm(0)
 
 
 ### For testing and debugging purposes outside the robot ###
