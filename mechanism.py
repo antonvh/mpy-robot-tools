@@ -3,7 +3,7 @@ import math, utime
 
 ### These meta-functions return functions for use inside the mechanism class ###
 
-def linear_interpolation(points, wrapping=True, scale_y = 1):
+def linear_interpolation(points, wrapping=True, scale=1, accumulation_per_period=0, time_offset=0):
     """
     Returns a method that interpolates values between keyframes / key coordinates.
 
@@ -33,12 +33,12 @@ def linear_interpolation(points, wrapping=True, scale_y = 1):
     x_range = x_max - x_min
 
     # Now rebase to x's 0 and invert values if needed
-    points = [(x - x_min, scale_y * y) for (x, y) in points]
+    points = [(x - x_min, scale * y) for (x, y) in points]
 
     # Build our return function
     def function(x):
         # Correct input for the zero-rebased point list
-        x -= x_min
+        x -= x_min + time_offset
 
         if not wrapping:
             # Extend the extremes to infinity and return
@@ -48,19 +48,21 @@ def linear_interpolation(points, wrapping=True, scale_y = 1):
                 return points[-1][1]
         else:
             # Wrap around with the modulo function and continue
-            x = x % x_range
+            x_phase = x % x_range
+            x_periods = x // x_range
 
         # Now we can safely look up the value in the list
-        # Because it is between min_x and max_x 
+        # Because it is between min_x and max_x
         # Either because of the module or the truncation
-        
+
         for i in range(len(points)):
-            if x < points[i][0]:
+            if x_phase < points[i][0]:
                 # Found our matching slot
                 # Interpolate between two nearest values
                 x1,y1 = points[i-1]
                 x2,y2 = points[i]
-                return y1 + (x - x1)/(x2 - x1)*(y2 - y1)
+                interpolated_y = y1 + (x_phase - x1)/(x2 - x1)*(y2 - y1)
+                return x_periods*accumulation_per_period + interpolated_y
     return function
 
 
