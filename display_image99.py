@@ -164,8 +164,3 @@ def image_99(number):
 
         # Convert to string with semicolons
         return ":".join(["".join([str(n) for n in r]) for r in result_px])
-
-if __name__ == "__main__":
-    f = open("numbers.txt", 'w')
-    for i in range(100):
-        f.write(image_99(i)+"\n")
