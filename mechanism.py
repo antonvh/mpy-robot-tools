@@ -1,9 +1,20 @@
-import math, utime
+"""
+This robot does X
+Core program starts at line 300
+"""
+
+### Boilerplate code for animating robots
+### Facilitates synchronzing different motor movements
+### Author: Anton Mindstorms Hacks
+### Source: https://antonsmindstorms.com/
+### Tutorials: https://www.youtube.com/c/AntonsMindstormsHacks/
+
+import hub, math, utime
 
 
 ### These meta-functions return functions for use inside the mechanism class ###
 
-def linear_interpolation(points, wrapping=True, scale=1, accumulation_per_period=0, time_offset=0):
+def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0):
     """
     Returns a method that interpolates values between keyframes / key coordinates.
 
@@ -34,6 +45,11 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation_per_period
 
     # Now rebase to x's 0 and invert values if needed
     points = [(x - x_min, scale * y) for (x, y) in points]
+
+    # Calculate accumulation with first and last keyframe
+    accumulation_per_period = 0
+    if accumulation:
+        accumulation_per_period = points[-1][1] - points[0][1]    
 
     # Build our return function
     def function(x):
@@ -281,46 +297,14 @@ class Mechanism():
         for motor in self.motors:
             motor.pwm(0)
 
+### Boilerplate control loop here
+motors = []
+motor_functions = []
+my_mechanism = Mechanism(motors, motor_functions)
+my_mechanism.shortest_path_reset()
+timer= AMHTimer()
+while timer.time < 10000:
+    my_mechanism.update_motor_pwms(timer.time)
+my_mechanism.stop()
 
-### For testing and debugging purposes outside the robot ###
-# Don't copy this into your spike script
-if __name__ == "__main__":
-    print("Run some timer tests and examples")
-    mytimer = AMHTimer()
-    mytimer.rate = 500
-    mytimer.reset()
-    utime.sleep_ms(500)
-
-    mytimer.pause()
-    print(mytimer.time)
-    mytimer.rate = -1000
-
-    mytimer.resume() 
-    mytimer.reset()
-    utime.sleep_ms(500)
-    mytimer.pause()
-    print(mytimer.time)
-
-    mytimer.rate = 100
-    mytimer.acceleration = 200
-    mytimer.start()
-    while mytimer.rate < 1000:
-        utime.sleep_ms(100)
-        print(mytimer.time, mytimer.rate)
-
-    print("Count down from 10 seconds")
-    mytimer.time = 10000
-    mytimer.rate = -1000
-    mytimer.acceleration = 0
-
-    while mytimer.time >= 0:
-        utime.sleep_ms(1000)
-        print(mytimer.time)
-
-    print("Now run some linear interpolation tests")
-    points = [(-200, 100), (0, 100), (250, -100), (500, -100), (1000, 100)]
-    li_function = linear_interpolation(points, wrapping = False)
-    li_function_w = linear_interpolation(points)
-    sine_function = sine_wave()
-    for i in range(-1100, 2400, 10):
-        print("{}\t{}\t{}".format(i, li_function(i), li_function_w(i)))
+raise SystemExit
