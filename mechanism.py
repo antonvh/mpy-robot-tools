@@ -91,7 +91,6 @@ def linear(factor, time_delay = 0, offset = 0):
         return x * factor + y0
     return function
 
-
 def sine_wave(amplitude=100, period=1000, offset=0):
     def function(x):
         return math.sin((x-offset)/period*2*math.pi) * amplitude
@@ -236,9 +235,12 @@ class Mechanism():
         if reset_zero:
             self.relative_position_reset()
 
-    def relative_position_reset(self):
-            # Set degrees counted of all motors according to absolute 0
-            for motor in self.motors:
+    def relative_position_reset(self, motors_to_reset=[]):
+        if not motors_to_reset:
+            motors_to_reset = [1]*len(self.motors)
+        # Set degrees counted of all motors according to absolute 0
+        for motor, reset in zip(self.motors, motors_to_reset):
+            if reset:
                 absolute_position = motor.get()[2]
                 if absolute_position > 180:
                     absolute_position -= 360
@@ -266,24 +268,27 @@ class Mechanism():
 
             motor.pwm( power )
 
-    def shortest_path_reset(self, ticks=0, speed=20):
+    def shortest_path_reset(self, ticks=0, speed=20, motors_to_reset=[]):
         # Get motors in position smoothly before starting the control loop
+        if not motors_to_reset:
+            motors_to_reset = [1]*len(self.motors)
 
         # Reset internal tacho to range -180,180
-        self.relative_position_reset()
+        self.relative_position_reset(motors_to_reset)
 
         # Run all motors to a ticks position with shortest path
-        for motor, motor_function in zip(self.motors, self.motor_functions):
-            target_position = int(motor_function(ticks))
-            current_position = motor.get()[1]
-            # Reset internal tacho so next move is shortest path
-            if target_position - current_position > 180:
-                motor.preset(current_position + 360)
-            if target_position - current_position < -180:
-                motor.preset(current_position - 360)
-            # Start the manouver
-            motor.run_to_position(target_position, speed)
-        
+        for motor, motor_function, reset in zip(self.motors, self.motor_functions, motors_to_reset):
+            if reset:
+                target_position = int(motor_function(ticks))
+                current_position = motor.get()[1]
+                # Reset internal tacho so next move is shortest path
+                if target_position - current_position > 180:
+                    motor.preset(current_position + 360)
+                if target_position - current_position < -180:
+                    motor.preset(current_position - 360)
+                # Start the manouver
+                motor.run_to_position(target_position, speed)
+
         # Give the motors time to spin up
         utime.sleep_ms(50)
         # Check all motors pwms until all maneuvers have ended
