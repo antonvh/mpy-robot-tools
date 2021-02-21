@@ -1,3 +1,5 @@
+import hub
+
 _ = 0
 O = 8
 x = 6
@@ -150,17 +152,23 @@ units_px = {
 }
 
 def image_99(number):
-    number = int(number)
-    if not 0 <= number <= 99:
+    error_image = hub.Image("00000:09090:00900:09090:00000")
+    try:
+        if not 0 <= number <= 99:
+            # Return an error cross
+            return error_image
+    except:
         # Return an error cross
-        return "00000:09090:00900:09090:00000"
-    else:
-        units = number % 10
-        tens = number // 10
-        # Join matrices
-        result_px = []
-        for i in range(5):
-            result_px += [tens_px[tens][i] + units_px[units][i]]
+        return error_image
 
-        # Convert to string with semicolons
-        return ":".join(["".join([str(n) for n in r]) for r in result_px])
+    number = int(number)
+    units = number % 10
+    tens = number // 10
+    # Join matrices
+    result_px = []
+    for i in range(5):
+        result_px += [tens_px[tens][i] + units_px[units][i]]
+
+    # Convert to string with semicolons
+    result_str = ":".join(["".join([str(n) for n in r]) for r in result_px])
+    return hub.Image(result_str)

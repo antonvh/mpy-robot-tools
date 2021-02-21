@@ -9,3 +9,6 @@ class port():
 
 class hub():
     port = port()
+
+    def Image(self, string):
+        return string
