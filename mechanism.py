@@ -62,10 +62,10 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
                 return points[0][1]
             elif x >= points[-1][0]:
                 return points[-1][1]
-        else:
-            # Wrap around with the modulo function and continue
-            x_phase = x % x_range
-            x_periods = x // x_range
+
+        # Wrap around with the modulo function and continue
+        x_phase = x % x_range
+        x_periods = x // x_range
 
         # Now we can safely look up the value in the list
         # Because it is between min_x and max_x
