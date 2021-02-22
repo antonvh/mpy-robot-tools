@@ -313,13 +313,13 @@ class Mechanism():
 
 
 ### Boilerplate control loop here
-# motors = []
-# motor_functions = []
-# my_mechanism = Mechanism(motors, motor_functions)
-# my_mechanism.shortest_path_reset()
-# timer= AMHTimer()
-# while timer.time < 10000:
-#     my_mechanism.update_motor_pwms(timer.time)
-# my_mechanism.stop()
+motors = []
+motor_functions = []
+my_mechanism = Mechanism(motors, motor_functions)
+my_mechanism.shortest_path_reset()
+timer= AMHTimer()
+while timer.time < 10000:
+    my_mechanism.update_motor_pwms(timer.time)
+my_mechanism.stop()
 
-# raise SystemExit
+raise SystemExit
