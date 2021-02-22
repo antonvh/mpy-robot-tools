@@ -13,8 +13,7 @@ import hub, math, utime
 
 
 ### These meta-functions return functions for use inside the mechanism class ###
-
-def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0):
+def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0, smoothing=0.0):
     """
     Returns a method that interpolates values between keyframes / key coordinates.
 
@@ -25,6 +24,10 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     - scale_y: scale the y coordinates to enlarge movements or to invert them (scale_y=-1)
     - wrapping: True by default. If an x value is beyond the highest x value in the point list,
     wrapping will wrap the values and look back to the first coordinates.
+    - accumulation: Boolean. True, by default. After each wraparound, 
+    adds the difference between the first and last keyframe.
+    - time_offset: offset the first values in the keyframes by this number
+    - smoothing: Increase up to 1.0 for maximum cosine smoothing. This is sometimes called 'easing'
 
     Example:
     my_function = linear_interpolation([(0,0), (1000,360), (2000,0)])
@@ -50,6 +53,9 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     accumulation_per_period = 0
     if accumulation:
         accumulation_per_period = points[-1][1] - points[0][1]    
+
+    # Safety precautions around smoothing:
+    smoothing = min(max(0.0, smoothing),1.0)
 
     # Build our return function
     def function(x):
@@ -77,10 +83,12 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
                 # Interpolate between two nearest values
                 x1,y1 = points[i-1]
                 x2,y2 = points[i]
-                interpolated_y = y1 + (x_phase - x1)/(x2 - x1)*(y2 - y1)
+                gap = y2 - y1
+                progress = (x_phase - x1)/(x2 - x1)
+                smooth_progress = (1-math.cos(math.pi*progress)) / 2
+                interpolated_y = y1 + smoothing*smooth_progress*gap + (1-smoothing)*progress*gap
                 return x_periods*accumulation_per_period + interpolated_y
     return function
-
 
 def linear(factor, time_delay = 0, offset = 0):
     """
@@ -104,6 +112,7 @@ def block_wave(amplitude=100, period=1000, offset=0):
         else:
             return -amplitude
     return function
+
 
 ### Advanced timer class to use together with the Mechanism class ###
 class AMHTimer():
@@ -302,14 +311,15 @@ class Mechanism():
         for motor in self.motors:
             motor.pwm(0)
 
-### Boilerplate control loop here
-motors = []
-motor_functions = []
-my_mechanism = Mechanism(motors, motor_functions)
-my_mechanism.shortest_path_reset()
-timer= AMHTimer()
-while timer.time < 10000:
-    my_mechanism.update_motor_pwms(timer.time)
-my_mechanism.stop()
 
-raise SystemExit
+### Boilerplate control loop here
+# motors = []
+# motor_functions = []
+# my_mechanism = Mechanism(motors, motor_functions)
+# my_mechanism.shortest_path_reset()
+# timer= AMHTimer()
+# while timer.time < 10000:
+#     my_mechanism.update_motor_pwms(timer.time)
+# my_mechanism.stop()
+
+# raise SystemExit
