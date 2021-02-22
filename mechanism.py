@@ -54,7 +54,7 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     if accumulation:
         accumulation_per_period = points[-1][1] - points[0][1]    
 
-    # Safety precautions around smoothing:
+    # Safety precautions around smoothing, clamp between 0.0 and 1.0
     smoothing = min(max(0.0, smoothing),1.0)
 
     # Build our return function
@@ -75,7 +75,6 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
 
         # Now we can safely look up the value in the list
         # Because it is between min_x and max_x
-        # Either because of the module or the truncation
 
         for i in range(len(points)):
             if x_phase < points[i][0]:
@@ -85,7 +84,11 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
                 x2,y2 = points[i]
                 gap = y2 - y1
                 progress = (x_phase - x1)/(x2 - x1)
-                smooth_progress = (1-math.cos(math.pi*progress)) / 2
+                if smoothing:
+                    smooth_progress = (1-math.cos(math.pi*progress)) / 2
+                else:
+                    # Avoid unnecessary cosine calculations
+                    smooth_progress = 0
                 interpolated_y = y1 + smoothing*smooth_progress*gap + (1-smoothing)*progress*gap
                 return x_periods*accumulation_per_period + interpolated_y
     return function
