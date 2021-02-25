@@ -1,6 +1,6 @@
 """
 This robot does X
-Core program starts at line 300
+Core program starts at line 320
 """
 
 ### Boilerplate code for animating robots
@@ -323,6 +323,7 @@ my_mechanism.shortest_path_reset()
 timer= AMHTimer()
 while timer.time < 10000:
     my_mechanism.update_motor_pwms(timer.time)
+    utime.sleep_ms(15)
 my_mechanism.stop()
 
 raise SystemExit
