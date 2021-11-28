@@ -1,15 +1,5 @@
-"""
-This robot does X
-Core program starts at line 320
-"""
 
-### Boilerplate code for animating robots
-### Facilitates synchronzing different motor movements
-### Author: Anton Mindstorms Hacks
-### Source: https://antonsmindstorms.com/
-### Tutorials: https://www.youtube.com/c/AntonsMindstormsHacks/
-
-import hub, math, utime
+import math, utime
 
 
 ### These meta-functions return functions for use inside the mechanism class ###
@@ -313,17 +303,3 @@ class Mechanism():
     def stop(self):
         for motor in self.motors:
             motor.pwm(0)
-
-
-### Boilerplate control loop here
-motors = []
-motor_functions = []
-my_mechanism = Mechanism(motors, motor_functions)
-my_mechanism.shortest_path_reset()
-timer= AMHTimer()
-while timer.time < 10000:
-    my_mechanism.update_motor_pwms(timer.time)
-    utime.sleep_ms(15)
-my_mechanism.stop()
-
-raise SystemExit

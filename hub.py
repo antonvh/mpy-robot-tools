@@ -7,8 +7,11 @@ class port():
     A = 'A'
     B = 'B'
 
-class hub():
-    port = port()
+def Image(string):
+    return string
 
-    def Image(self, string):
+class Display():
+    def show(self, string):
         return string
+
+display = Display()
