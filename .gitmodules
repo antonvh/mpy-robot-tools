@@ -1,0 +1,3 @@
+[submodule "Submodules/LEGO-HuskyLenslib"]
+	path = Submodules/LEGO-HuskyLenslib
+	url = https://github.com/antonvh/LEGO-HuskyLenslib
