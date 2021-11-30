@@ -24,6 +24,17 @@ _CONNECT_IMAGES= [
     Image('35790:00000:00000:00000:00000'),
 ]
 
+L_STICK_HOR = const(0)
+L_STICK_VER = const(1)
+R_STICK_HOR = const(2)
+R_STICK_VER = const(3)
+L_TRIGGER = const(4)
+R_TRIGGER = const(5)
+SETTING1 = const(6)
+SETTING2 = const(7)
+BUTTONS = const(8)
+
+
 _IRQ_CENTRAL_CONNECT = 1
 _IRQ_CENTRAL_DISCONNECT = 2
 
@@ -133,9 +144,6 @@ def decode_services(payload):
 
 class RCAppReceiver:
     def __init__(self, name="robot", logo="00000:05550:05950:05550:00000"):
-        self._x=100
-        self._y=100
-        self._n=12
         self._logo=Image(logo)
         self._CONNECT_ANIMATION = [img + self._logo for img in _CONNECT_IMAGES]
         self._ble = bluetooth.BLE()
@@ -147,7 +155,8 @@ class RCAppReceiver:
         self._ble.gatts_set_buffer(self._handle_tx, 100)
         self._connections = set()
         self._connected=False
-        self._write_callback = None
+        self.controller_state = [0]*9
+        self._write_callback = self.on_rx
         self._update_animation()
         self._payload = advertising_payload(name=name, services=[_UART_UUID])
         self._advertise()
@@ -172,6 +181,7 @@ class RCAppReceiver:
             self._update_animation()
             # Start advertising again to allow a new connection.
             self._advertise()
+
         elif event == _IRQ_GATTS_WRITE:
             conn_handle, value_handle = data
             value = self._ble.gatts_read(value_handle)
@@ -198,3 +208,10 @@ class RCAppReceiver:
             display.show(self._CONNECT_ANIMATION, delay=100, wait=False, loop=True)
         else:
             display.show(self._logo)
+
+    def button_pressed(self, button):
+        return self.controller_state[BUTTONS] & 1 << button-1
+
+    # Remote control data callback function
+    def on_rx(self, control):
+        self.controller_state = struct.unpack("bbbbBBhhB", control)
