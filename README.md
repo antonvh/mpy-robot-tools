@@ -4,8 +4,7 @@ This is a collection of classes and methods that help you to animate robots. The
 
 ## Installation ##
 
-Sadly the official LEGO apps do not allow multi-file projects. The only way to use these classes is to copy them and past them in your script.
-
+Copy the code from the [install script](Installer/install_mpy_robot_tools.py) to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program. Then run it once.
 
 ## Overview of the tools ##
 
