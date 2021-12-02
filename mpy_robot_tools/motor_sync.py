@@ -1,6 +1,8 @@
 
 import math, utime
 
+# TODO: Build this around the PBMotor class to simplify the code
+# from helpers import PBMotor
 
 ### These meta-functions return functions for use inside the mechanism class ###
 def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0, smoothing=0.0):
@@ -254,10 +256,10 @@ class Mechanism():
         # an integer between -100 and 100
         return min(max(int(f),-100),100)
 
-    def update_motor_pwms(self, ticks):
+    def update_motor_pwms(self, ticks, *args, **kwargs):
         # Proportional controller toward disered motor positions at ticks
         for motor, motor_function in zip(self.motors, self.motor_functions):
-            target_position = motor_function(ticks)
+            target_position = motor_function(ticks, *args, **kwargs)
             current_position = motor.get()[1]
             power = self.float_to_motorpower((target_position-current_position)* self.Kp)
             if self.ramp_pwm < 100:
