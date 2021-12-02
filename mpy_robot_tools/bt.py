@@ -5,6 +5,7 @@ from time import sleep_ms
 from micropython import const
 from machine import Timer
 
+# TODO: Restructue/expand this to have one bt class in different modes: rc, uart central, uart peripheral.
 
 _CONNECT_IMAGES= [
     Image('03579:00000:00000:00000:00000'),

@@ -1,3 +1,4 @@
+from machine import Timer
 
 def clamp_int(n, floor=-100, ceiling=100):
     return max(min(int(n),ceiling),floor)
@@ -40,3 +41,27 @@ class PBMotor():
             self.motor.pwm(clamp_int(duty))
         elif self.type == __PYBRICKS:
             self.motor.dc(duty)
+
+    def reset_angle(self, *args):
+        # Pass 0 to set current position to zero
+        # Without arguments this resets to the absolute encoder position
+        if self.type == __MSHUB:
+            if len(args) == 0:
+                absolute_position = self.motor.get()[2]
+                if absolute_position > 180:
+                    absolute_position -= 360
+                self.motor.preset(absolute_position)
+            else:
+                self.motor.preset(args[0])
+        elif self.type == __PYBRICKS:
+            self.motor.reset_angle(*args)
+
+    def track_target(self, target, gain=1.5):
+        if self.type == __MSHUB:
+            track_target(self.motor, target, gain)
+            # This timer should be overwritten and reset if you call track target again within 500ms
+            self.t = Timer(mode=Timer.ONE_SHOT, period=500, callback=lambda x:self.motor.run_to_position(target))
+            # Just checking.
+            print("Ran to position")
+        elif self.type == __PYBRICKS:
+            self.motor.track_target(target)
