@@ -422,6 +422,9 @@ class RCReceiver:
         self.connected = False
         self.on_disconnect()
 
+    def is_connected(self):
+        return self.connected
+
     def button_pressed(self, button):
         # Test if any buttons are pressed on the remote
         return self.controller_state[BUTTONS] & 1 << button-1

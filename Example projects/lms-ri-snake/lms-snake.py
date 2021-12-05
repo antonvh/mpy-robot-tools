@@ -15,7 +15,6 @@ motors = [
     port.F.motor,
 ]
 
-
 def sine_wave_w_params(amplitude=100, period=1000, offset_factor=0):
     def function(x, delay_setting = 0, baseline = 0):
         # global baseline, delay_setting
@@ -35,13 +34,13 @@ motorfuncs = [
 
 snake_body = Mechanism(motors, motorfuncs)
 
-while not rcv.is_connected():
+while not rcv.connected:
     print("Waiting for connection...")
     sleep_ms(300)
 
 eyes = 100
 timer = AMHTimer()
-while rcv.is_connected():
+while rcv.connected:
     speed, turn, delay_setting = [rcv.controller_state[control] for control in [R_STICK_VER, L_STICK_HOR, SETTING2] ]
     if rcv.button_pressed(1):
         eyes = 100
@@ -52,6 +51,6 @@ while rcv.is_connected():
     ds.light_up_all(eyes)
     timer.rate = speed*20
     baseline = turn/2
-    snake_body.update_motor_pwms(timer.time, baseline, delay_setting)
+    snake_body.update_motor_pwms(timer.time, delay_setting=delay_setting, baseline=baseline)
 
 raise SystemExit
