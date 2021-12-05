@@ -1,12 +1,12 @@
 from hub import port
 from time import sleep_ms
 import math
-from projects.mpy_robot_tools.bt import RCAppReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
+from projects.mpy_robot_tools.bt import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer
 from mindstorms import DistanceSensor
 
 ds = DistanceSensor('A')
-rcv = RCAppReceiver(name="snake")
+rcv = RCReceiver(name="snake")
 
 motors = [
     port.C.motor,
@@ -47,6 +47,8 @@ while rcv.is_connected():
     if rcv.button_pressed(1):
         eyes = 100
     if rcv.button_pressed(2):
+        eyes = 50
+    if rcv.button_pressed(3):
         eyes = 0
     ds.light_up_all(eyes)
     timer.rate = speed*20
