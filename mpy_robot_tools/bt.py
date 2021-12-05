@@ -483,10 +483,12 @@ class RCTransmitter():
             self._reset()
 
     def set_button(self, num, pressed):
-        if pressed:
-            self.controller_state[BUTTONS] |= 1 << (num-1)
-        else:
-            self.controller_state[BUTTONS] &= 0 << (num-1)
+        if 0 < num < 9:
+            bitmask = 0b1 << (num-1)
+            if pressed:
+                self.controller_state[BUTTONS] |= bitmask
+            else:
+                self.controller_state[BUTTONS] &= ~bitmask
 
     def set_stick(self, stick, value):
         self.controller_state[stick] = clamp_int(value)
