@@ -15,10 +15,9 @@ motors = [
     port.F.motor,
 ]
 
-delay_setting = 0
-baseline = 0
-def sine_wave_global_baseline(amplitude=100, period=1000, offset_factor=0):
-    def function(x):
+
+def sine_wave_w_params(amplitude=100, period=1000, offset_factor=0):
+    def function(x, delay_setting = 0, baseline = 0):
         # global baseline, delay_setting
         return baseline + math.sin((x-delay_setting*offset_factor)/period*2*math.pi) * amplitude
     return function
@@ -28,10 +27,10 @@ PERIOD = 2000
 DELAY_FACTOR = 2 # ticks, not degrees
 DAMPENING = 0.07
 motorfuncs = [
-    sine_wave_global_baseline(AMPLITUDE * (1-DAMPENING*0), PERIOD, DELAY_FACTOR*0),
-    sine_wave_global_baseline(AMPLITUDE * (1-DAMPENING*1), PERIOD, DELAY_FACTOR*1),
-    sine_wave_global_baseline(AMPLITUDE * (1-DAMPENING*2), PERIOD, DELAY_FACTOR*2),
-    sine_wave_global_baseline(AMPLITUDE * (1-DAMPENING*3), PERIOD, DELAY_FACTOR*3),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*0), PERIOD, DELAY_FACTOR*0),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*1), PERIOD, DELAY_FACTOR*1),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*2), PERIOD, DELAY_FACTOR*2),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*3), PERIOD, DELAY_FACTOR*3),
 ]
 
 snake_body = Mechanism(motors, motorfuncs)
@@ -53,6 +52,6 @@ while rcv.is_connected():
     ds.light_up_all(eyes)
     timer.rate = speed*20
     baseline = turn/2
-    snake_body.update_motor_pwms(timer.time)
+    snake_body.update_motor_pwms(timer.time, baseline, delay_setting)
 
 raise SystemExit
