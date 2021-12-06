@@ -2,7 +2,7 @@ from hub import display, Image
 import bluetooth
 import struct
 from time import sleep_ms
-from micropython import const
+from micropython import const, schedule
 from machine import Timer
 
 _CONNECT_IMAGES= [
@@ -35,6 +35,9 @@ BUTTONS = const(8)
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
+
+_NOTIFY_ENABLE = const(1)
+_INDICATE_ENABLE = const(2)
 
 if 'FLAG_INDICATE' in dir(bluetooth):
     # We're on MINDSTORMS Robot Inventor
@@ -188,10 +191,12 @@ class BLEHandler():
         self._char_result_callback = None
         self._read_callback = None
         self._write_callbacks = {}
-        self._notify_callback = None
+        self._notify_callbacks = {}
         self._search_name = None
         self.connecting_uart = False
         self.connecting_lego = False
+        self._read_data = []
+        self._reading=False
 
     def info(self, *messages):
         if self.debug:
@@ -216,17 +221,18 @@ class BLEHandler():
                     self._addr_type = addr_type
                     self._addr = bytes(addr)
                     self._adv_type = adv_type
-                    self._name = self.__decoder.decode_name(adv_data)
-                    self._services = self.__decoder.decode_services(adv_data)
-                    self._man_data = self.__decoder.decode_manufacturer(adv_data)
+                    self._name = decode_name(adv_data)
+                    self._services = decode_services(adv_data)
+                    # self._man_data = decode_manufacturer(adv_data)
+                    self.stop_scan()
             if self._scan_result_callback:
                 self._scan_result_callback(addr_type, addr, name, services)
 
         # elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
-        #     # Called once service discovery is complete.
-        #     # Note: Status will be zero on success, implementation-specific value otherwise.
-        #     # conn_handle, status = data
-        #     pass
+        #    # Called once service discovery is complete.
+        #    # Note: Status will be zero on success, implementation-specific value otherwise.
+        #    # conn_handle, status = data
+        #    pass
 
         elif event == _IRQ_SCAN_DONE:
             if self.connecting_uart:
@@ -236,14 +242,25 @@ class BLEHandler():
                     self._ble.gap_connect(self._addr_type, self._addr)
                 else:
                     self.connecting_uart = False
-                    # print("No uart peripheral '{}' found.".format(self._search_name))
+                    self.info("No uart peripheral '{}' found.".format(self._search_name))
+            elif self.connecting_lego:
+                if self._addr_type is not None:
+                    print("Found SMART Hub:", self._name)
+                    sleep_ms(500)
+                    self._ble.gap_connect(self._addr_type, self._addr)
+                else:
+                    self.connecting_lego = False
+                    self.info("LEGO Smart hub found.")
             if self._scan_done_callback:
                 self._scan_done_callback(data)
 
         elif event == _IRQ_PERIPHERAL_CONNECT:
             # Connect successful.
             conn_handle, addr_type, addr = data
-            self._conn_handle=conn_handle
+            if self.connecting_uart:
+                self._conn_handle=conn_handle
+            elif self.connecting_lego:
+                self._lego_conn_handle=conn_handle
             self._ble.gattc_discover_services(conn_handle)
 
         elif event == _IRQ_PERIPHERAL_DISCONNECT:
@@ -255,9 +272,7 @@ class BLEHandler():
         elif event == _IRQ_GATTC_SERVICE_RESULT:
             # Connected device returned a service.
             conn_handle, start_handle, end_handle, uuid = data
-            if uuid == _UART_UUID:
-                # self._start_handle, self._end_handle = start_handle, end_handle
-                # print("UART_UID handles",data)
+            if uuid == _UART_UUID or uuid == _LEGO_SERVICE_UUID:
                 sleep_ms(500)
                 try:
                     self._ble.gattc_discover_characteristics(conn_handle, start_handle, end_handle)
@@ -265,15 +280,15 @@ class BLEHandler():
                     pass
 
         # elif event == _IRQ_GATTC_SERVICE_DONE:
-        #     # Service query complete.
-        #     # if self._start_handle and self._end_handle:
-        #     #    # This is called at result and at done. Probably once too much.
-        #     #    self._ble.gattc_discover_characteristics(
-        #     #        self._conn_handle, self._start_handle, self._end_handle
-        #     #    )
-        #     # else:
-        #     #    print("Failed to find uart service.")
-        #     #    self.timed_out = True
+        #    # Service query complete.
+        #    # if self._start_handle and self._end_handle:
+        #    #    # This is called at result and at done. Probably once too much.
+        #    #    self._ble.gattc_discover_characteristics(
+        #    #        self._conn_handle, self._start_handle, self._end_handle
+        #    #    )
+        #    # else:
+        #    #    print("Failed to find uart service.")
+        #    #    self.timed_out = True
 
         elif event == _IRQ_GATTC_CHARACTERISTIC_RESULT:
             # Connected device returned a characteristic.
@@ -285,29 +300,32 @@ class BLEHandler():
                     self._tx_handle = value_handle
                 if all((self._conn_handle, self._rx_handle, self._tx_handle)):
                     self.connecting_uart = False
+            elif self.connecting_lego:
+                if uuid == _LEGO_SERVICE_CHAR:
+                    self._lego_value_handle = value_handle
+                    self.connecting_lego = False # We're done
             if self._char_result_callback:
                 self._char_result_callback(conn_handle, value_handle, uuid)
 
         # elif event == _IRQ_GATTC_WRITE_DONE:
-        #     conn_handle, value_handle, status = data
-        #     # print("TX complete")
+        #    conn_handle, value_handle, status = data
+        #    # print("TX complete")
 
         elif event == _IRQ_GATTC_NOTIFY:
             # print("_IRQ_GATTC_NOTIFY")
             conn_handle, value_handle, notify_data = data
             notify_data=bytes(notify_data)
-
-            # if conn_handle == self._conn_handle and value_handle == self._tx_handle:
-            if self._notify_callback:
-                self._notify_callback(conn_handle, value_handle, notify_data)
+            if conn_handle in self._notify_callbacks.keys():
+                schedule(self._notify_callbacks[conn_handle],notify_data)
 
         elif event == _IRQ_GATTC_READ_RESULT:
             # A read completed successfully.
             #print("_IRQ_GATTC_READ_RESULT")
             conn_handle, value_handle, char_data = data
-            if conn_handle == self._conn_handle and value_handle in (self._rx_handle,self._buta_handle,self._butb_handle):
-                # print("handle,READ data",value_handle,bytes(char_data))
-                self._read_callback(value_handle,bytes(char_data))
+            self._read_data = bytes(char_data)
+            if self._reading == conn_handle: self._reading = False
+            if self._read_callback:
+                self._read_callback(data)
 
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, addr_type, addr = data
@@ -331,7 +349,7 @@ class BLEHandler():
                 self._write_callbacks[value_handle](value)
 
         else:
-            self.info("Unhandled event, no problem: ", event, hex(event))
+            self.info("Unhandled event, no problem: ", hex(event), "data:", data)
 
 
     def advertise(self, payload, interval_us=100000):
@@ -374,20 +392,67 @@ class BLEHandler():
         for i in range(20):
             print("Waiting for connection...")
             sleep_ms(500)
-            if (not self.connecting_uart): # or (self.timed_out):
+            if (not self.connecting_uart): # or (self._conn_handle):
                 break
         return self._conn_handle
 
-    def uart_write(self, conn_handle, value, response=False):
+    def connect_lego(self):
+        self.connecting_lego = True
+        self._lego_conn_handle = None
+        self._lego_value_handle = None
+        self._addr_type = None
+        self._addr = None
+        self._addr_type = None
+        self._addr = None
+        self.scan()
+        for i in range(20):
+            print("Waiting for connection...")
+            sleep_ms(500)
+            if (not self.connecting_lego): # or (self.timed_out):
+                break
+        return self._lego_conn_handle
+
+    def uart_write(self, value, conn_handle=None, response=False):
+        if not conn_handle: conn_handle = self._conn_handle
         self._ble.gattc_write(conn_handle, self._rx_handle, value, 1 if response else 0)
 
-    def uart_read(self, conn_handle, callback):
+    def read(self, conn_handle, val_handle, callback=None):
         self._read_callback = callback
         try:
-            self._ble.gattc_read(conn_handle, self._tx_handle)
-        except:
-            pass
-            print("gattc_read failed")
+            self._ble.gattc_read(conn_handle, val_handle)
+        except Exception as e:
+            print("gattc_read failed",e)
+
+    def uart_read(self, conn_handle=None):
+        if not conn_handle: conn_handle = self._conn_handle
+        self._reading = conn_handle
+        self.read(conn_handle, self._tx_handle)
+        n=0
+        for i in range(100):
+            if not self._reading:
+                n = i
+                break
+            sleep_ms(4)
+        print("n:",n)
+        return self._read_data
+
+    def lego_read(self, conn_handle=None):
+        if not conn_handle: conn_handle = self._lego_conn_handle
+        self._reading = conn_handle
+        self.read(conn_handle, self._lego_value_handle)
+        n=0
+        for i in range(100):
+            if not self._reading:
+                n = i
+                break
+            sleep_ms(4)
+        # print("n:",n)
+        return self._read_data
+
+    def lego_write(self, value, conn_handle=None, response=False):
+        if not conn_handle: conn_handle = self._lego_conn_handle
+        if self._lego_value_handle:
+            self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
 
     # Connect to the specified device (otherwise use cached address from a scan).
     def connect(self, addr_type, addr):
@@ -396,57 +461,264 @@ class BLEHandler():
     def disconnect(self, conn_handle):
         self._ble.gap_disconnect(conn_handle)
 
-    # def enable_notify(self):
-    #    if not self.is_connected():
-    #        return
-    #    print("Enabled notify")
-    #    #self._ble.gattc_write(self._conn_handle, self._acc_handle, struct.pack('<h', _NOTIFY_ENABLE), 0)
-    #    for i in range(38,49):
-    #        self._ble.gattc_write(self._conn_handle, i, struct.pack('<h', _NOTIFY_ENABLE), 0)
-    #        time.sleep_ms(50)
-    #    print("notified enabled")
+    def enable_notify(self, conn_handle, desc_handle, callback=None):
+        self._ble.gattc_write(conn_handle, desc_handle, struct.pack('<h', _NOTIFY_ENABLE), 0)
+        if callback:
+            self._notify_callbacks[conn_handle] = callback
 
-class RCReceiver:
-    def __init__(self, ble_handler:BLEHandler=None, name="robot", logo="00000:05550:05950:05550:00000"):
-        self._logo=Image(logo)
+class UARTPeripheral():
+    def __init__(self, ble_handler:BLEHandler=None, name="robot", buffered=False):
         self.name = name
-        self._CONNECT_ANIMATION = [img + self._logo for img in _CONNECT_IMAGES]
         if ble_handler is None:
             ble_handler = BLEHandler()
         self.ble_handler = ble_handler
         self._handle_tx, self._handle_rx = ble_handler.register_uart_service()
-        self.controller_state = [0]*9
         self.ble_handler.on_write(self._handle_rx, self.on_rx)
         self.ble_handler._central_conn_callback = self.on_connect
         self.ble_handler._central_disconn_callback = self.on_disconnect
         self.connected = False
+        self.buffered = buffered
+        self.buffer = bytearray()
         self.on_disconnect()
 
     def is_connected(self):
         return self.connected
 
-    def button_pressed(self, button):
-        # Test if any buttons are pressed on the remote
-        return self.controller_state[BUTTONS] & 1 << button-1
-
     def on_disconnect(self, *data):
-        display.show(self._CONNECT_ANIMATION, delay=100, wait=False, loop=True)
         self.connected = False
         self.ble_handler.advertise(advertising_payload(name=self.name, services=[_UART_UUID]))
 
-    def on_connect(self, data):
-        display.show(self._logo)
+    def on_connect(self, *data):
         self.connected = True
-        self.ble_handler.on_write(self._handle_rx, self.on_rx)
+        # Is this necessary? Trying without.
+        # self.ble_handler.on_write(self._handle_rx, self.on_rx)
+
+    def on_rx(self, data):
+        if self.buffered:
+            self.buffer += data
+        else:
+            self.buffer = data
+
+    def read(self, n=-1):
+        if not self.buffered:
+            return self.buffer
+        else:
+            bufsize = len(self.buffer)
+            if n < 0 or n > bufsize:
+                n = bufsize
+            data = self.buffer[:n]
+            del self.buffer[:n]
+            return data
+
+    def write(self, data):
+        self.ble_handler.uart_write(data)
+
+
+class RCReceiver(UARTPeripheral):
+    def __init__(self, ble_handler:BLEHandler=None, name="robot", logo="00000:05550:05950:05550:00000"):
+        self._logo=Image(logo)
+        self._CONNECT_ANIMATION = [img + self._logo for img in _CONNECT_IMAGES]
+        self.controller_state = [0]*9
+        super().__init__(ble_handler, name)
+        self.buffer = bytearray(struct.calcsize("bbbbBBhhB"))
+
+    def button_pressed(self, button):
+        # Test if any buttons are pressed on the remote
+        if 0 < button < 9:
+            return self.controller_state[BUTTONS] & 1 << button-1
+        else:
+            return False
+
+    def on_disconnect(self, *data):
+        display.show(self._CONNECT_ANIMATION, delay=100, wait=False, loop=True)
+        super().on_disconnect(*data)
+
+    def on_connect(self, *data):
+        display.show(self._logo)
         t = Timer(
             mode=Timer.ONE_SHOT,
             period=2000,
             callback=lambda x:self.ble_handler.notify(repr(self._logo), self._handle_tx)
             )
+        super().on_connect(*data)
 
-    def on_rx(self, control):
-        # Remote control data callback function
-        self.controller_state = struct.unpack("bbbbBBhhB", control)
+    def controller_state(self, *indices):
+        self.controller_state = struct.unpack("bbbbBBhhB", self.buffer)
+        if indices:
+            return [self.controller_state[i] for i in indices]
+        else:
+            return self.controller_state
+
+HUB_NOTIFY_DESC = const(0x0F)
+REMOTE_NOTIFY_DESC = const(0x0C)
+MARIO_NOTIFY_DESC = const(14)
+HUB_PORT_ACC = const(0x61)
+HUB_PORT_GYRO = const(0x62)
+HUB_PORT_TILT = const(0x63)
+
+MODE = const(0)
+MODE_BYTE = const(1)
+MODE_DATA_SETS = const(2)
+MODE_DATA_SET_TYPE = const(3)
+
+OFF = const(0)
+PINK = const(1)
+PURPLE = const(2)
+DARK_BLUE = const(3)
+BLUE = const(4)
+TEAL = const(5)
+GREEN = const(6)
+YELLOW = const(7)
+ORANGE = const(8)
+RED = const(9)
+WHITE = const(10)
+
+class SmartHub():
+    __PORTS = {
+        1:0, 2:1, 3:2, 4:3,
+        "A":0, "B":1, "C":2, "D":3}
+
+    def __init__(self, ble_handler:BLEHandler=None):
+        if ble_handler is None:
+            ble_handler = BLEHandler()
+        self.ble_handler = ble_handler
+        self._conn_handle = None
+        self.acc_sub = False
+        self.gyro_sub = False
+        self.tilt_sub = False
+        self.hub_data = {}
+        self.mode_info = {}
+
+    def connected(self):
+        return self._conn_handle is not None
+
+    def connect(self):
+        self._conn_handle = self.ble_handler.connect_lego()
+        if self._conn_handle:
+            sleep_ms(500)
+            # Subscribe to motion data of SMART Hubs
+            self.write(0x0A, 0x00, 0x41, HUB_PORT_ACC, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01)
+            sleep_ms(200)
+            self.write(0x0A, 0x00, 0x41, HUB_PORT_GYRO, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01)
+            sleep_ms(200)
+            self.write(0x0A, 0x00, 0x41, HUB_PORT_TILT, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01)
+            sleep_ms(200)
+
+            # Initialize all ports with mode 0
+            SET_MODE = 0
+            for i in range(4):
+                # SUBSCRIBE_MODE
+                self.write(0x0A,0x00,0x41, i, SET_MODE, 0x01, 0x00, 0x00, 0x00, 0x01)
+                sleep_ms(100)
+                # GET_MODE_INFO
+                self.write(0x06, 0x00, 0x22, i, SET_MODE, 0x80)
+                sleep_ms(100)
+
+            # Enable notify on smart hubs
+            self.ble_handler.enable_notify(self._conn_handle, HUB_NOTIFY_DESC, self.__on_notify)
+            sleep_ms(200)
+            self.set_led_color(GREEN)
+        else:
+            print("Connection failed")
+
+    def disconnect(self):
+        if self._conn_handle:
+            self.ble_handler.disconnect(self._conn_handle)
+            self._conn_handle = None
+
+    def write(self, *data):
+        self.ble_handler.lego_write(
+            struct.pack("%sB" % len(data), *data),
+            self._conn_handle
+            )
+
+    def set_led_color(self, idx):
+        self.write(0x08, 0x00, 0x81, 0x32, 0x11, 0x51, 0x00, idx)
+
+    def set_remote_led_color(self, idx):
+        self.write(0x08, 0x00, 0x81, 0x34, 0x11, 0x51, 0x00, idx)
+
+    def __on_notify(self, data):
+        # hub = data[1]
+        message_type = data[2]
+        port = data[3]
+        payload = data[4:]
+        if message_type == 0x45:
+            self.hub_data[port] = payload
+        elif message_type == 0x44:
+            self.mode_info[port] = {
+                MODE : payload[0],
+                MODE_BYTE : payload[1],
+                MODE_DATA_SETS : payload[2],
+                MODE_DATA_SET_TYPE : payload[3],
+            }
+
+    def unpack_data(self, port, fmt="3h"):
+        if port in self.hub_data.keys():
+            return struct.unpack(fmt, self.hub_data[port])
+
+    def acc(self):
+        return self.unpack_data(HUB_PORT_ACC)
+
+    def gyro(self):
+        return self.unpack_data(HUB_PORT_GYRO)
+
+    def tilt(self):
+        return self.unpack_data(HUB_PORT_TILT)
+
+    def dc(self, port, pct):
+        self.write(0x06, 0x00, 0x81, self.__PORTS[port], 0x11, 0x51, 0x00, clamp_int(pct))
+
+    def run_target(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
+        degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
+        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0D, degree_bits[0], degree_bits[1], degree_bits[2], degree_bits[3], speed, max_power, 0x7E)
+
+    def mode(self, port, mode, *data):
+        # set_mode
+        self.write(0x0A,0x00,0x41, self.__PORTS[port], mode, 0x01, 0x00, 0x00, 0x00, 0x01)
+        sleep_ms(100)
+        if data:
+            self.write(7+len(data), 0x00, 0x81, self.__PORTS[port], 0x00, 0x51, mode, *data)
+            sleep_ms(100)
+        # request_mode_info
+        self.write(0x06, 0x00, 0x22, self.__PORTS[port], mode, 0x80)
+        sleep_ms(100)
+
+    def run(self, port, speed, max_power=100, acceleration=100, deceleration=100):
+        # Start motor at given speed
+        self.write(0x09, 0x00, 0x81, self.__PORTS[port], 0x11, 0x07, clamp_int(speed), max_power, 0x00)
+
+    def run_time(self, port, time, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
+        # Rotate motor for a given time
+        time_bits = struct.unpack("<BB", struct.pack("<H", time))
+        self.write(0x0B, 0x00, 0x81, self.__PORTS[port], 0x11, 0x09, time_bits[0], time_bits[1], speed, max_power, 0x00)
+
+    def run_angle(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
+        # Rotate motor for a given number of degrees relative to current position
+        degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
+        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0B, degree_bits[0], degree_bits[1], degree_bits[2], degree_bits[3], speed, max_power, 0x7E)
+
+    def get(self, port):
+        port = self.__PORTS[port]
+        if port in self.hub_data:
+            value = None
+            payload = self.hub_data[port]
+            no_data_sets = None
+            data_set_type = 0
+            if port in self.mode_info:
+                data_set_type = self.mode_info[port][MODE_DATA_SET_TYPE]
+                no_data_sets = self.mode_info[port][MODE_DATA_SETS]
+
+            if data_set_type == 0x00:
+                message = struct.unpack("%sb" % len(payload), payload)
+                value = message[:no_data_sets]
+            elif data_set_type == 0x01:
+                message = struct.unpack("%sh" % (len(payload)//2), payload)
+                value = message[:no_data_sets]
+            elif data_set_type == 0x02:
+                message = struct.unpack("%si" % (len(payload)//4), payload)
+                value = message[:no_data_sets]
+            return value
 
 
 class RCTransmitter():
@@ -509,3 +781,4 @@ class RCTransmitter():
             return
         value = struct.pack("bbbbBBhhB", *self.controller_state)
         self.ble_handler.uart_write(self._conn_handle, value)
+        
