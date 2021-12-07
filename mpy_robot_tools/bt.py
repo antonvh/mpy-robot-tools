@@ -197,6 +197,8 @@ class BLEHandler():
         self.connecting_lego = False
         self._read_data = []
         self._reading=False
+        self._start_handle = None
+        self._end_handle = None
 
     def info(self, *messages):
         if self.debug:
@@ -228,12 +230,6 @@ class BLEHandler():
             if self._scan_result_callback:
                 self._scan_result_callback(addr_type, addr, name, services)
 
-        # elif event == _IRQ_GATTC_CHARACTERISTIC_DONE:
-        #    # Called once service discovery is complete.
-        #    # Note: Status will be zero on success, implementation-specific value otherwise.
-        #    # conn_handle, status = data
-        #    pass
-
         elif event == _IRQ_SCAN_DONE:
             if self.connecting_uart:
                 if self._addr_type is not None:
@@ -255,7 +251,7 @@ class BLEHandler():
                 self._scan_done_callback(data)
 
         elif event == _IRQ_PERIPHERAL_CONNECT:
-            # Connect successful.
+            # Connect to peripheral successful.
             conn_handle, addr_type, addr = data
             if self.connecting_uart:
                 self._conn_handle=conn_handle
@@ -273,22 +269,18 @@ class BLEHandler():
             # Connected device returned a service.
             conn_handle, start_handle, end_handle, uuid = data
             if uuid == _UART_UUID or uuid == _LEGO_SERVICE_UUID:
-                sleep_ms(500)
-                try:
-                    self._ble.gattc_discover_characteristics(conn_handle, start_handle, end_handle)
-                except:
-                    pass
+                # Save handles until SERVICE_DONE
+                self._start_handle = start_handle
+                self._end_handle = end_handle
 
-        # elif event == _IRQ_GATTC_SERVICE_DONE:
-        #    # Service query complete.
-        #    # if self._start_handle and self._end_handle:
-        #    #    # This is called at result and at done. Probably once too much.
-        #    #    self._ble.gattc_discover_characteristics(
-        #    #        self._conn_handle, self._start_handle, self._end_handle
-        #    #    )
-        #    # else:
-        #    #    print("Failed to find uart service.")
-        #    #    self.timed_out = True
+        elif event == _IRQ_GATTC_SERVICE_DONE:
+            # Service query complete.
+            if self._start_handle and self._end_handle:
+                self._ble.gattc_discover_characteristics(
+                    self._conn_handle, self._start_handle, self._end_handle
+                )
+            else:
+                self.info("Failed to find requested gatt service.")
 
         elif event == _IRQ_GATTC_CHARACTERISTIC_RESULT:
             # Connected device returned a characteristic.
@@ -342,8 +334,10 @@ class BLEHandler():
                 self._central_disconn_callback(data)
 
         elif event == _IRQ_GATTS_WRITE:
+            # A central has written to the 'value handle' peripheral(?) characteristic.
+            # Get the value and trigger the callback.
+            # TODO: Test if peripherals can also write to centrals or whether they can only indicate.
             conn_handle, value_handle = data
-            # print(value_handle, self._write_callbacks)
             if value_handle in self._write_callbacks:
                 value = self._ble.gatts_read(value_handle)
                 self._write_callbacks[value_handle](value)
@@ -351,6 +345,8 @@ class BLEHandler():
         else:
             self.info("Unhandled event, no problem: ", hex(event), "data:", data)
 
+    def discover_characteristics(self, args):
+        self._ble.gattc_discover_characteristics(*args)
 
     def advertise(self, payload, interval_us=100000):
         print("Starting advertising")
@@ -384,6 +380,8 @@ class BLEHandler():
         # self.timed_out = False
         self.connecting_uart = True
         self._conn_handle = None
+        self._start_handle = None
+        self._end_handle = None
         self._rx_handle = None
         self._tx_handle = None
         self._addr_type = None
@@ -399,6 +397,8 @@ class BLEHandler():
     def connect_lego(self):
         self.connecting_lego = True
         self._lego_conn_handle = None
+        self._start_handle = None
+        self._end_handle = None
         self._lego_value_handle = None
         self._addr_type = None
         self._addr = None
@@ -466,6 +466,7 @@ class BLEHandler():
         if callback:
             self._notify_callbacks[conn_handle] = callback
 
+
 class UARTPeripheral():
     def __init__(self, ble_handler:BLEHandler=None, name="robot", buffered=False):
         self.name = name
@@ -499,6 +500,9 @@ class UARTPeripheral():
         else:
             self.buffer = data
 
+    def any(self):
+        return len(self.buffer)
+
     def read(self, n=-1):
         if not self.buffered:
             return self.buffer
@@ -511,6 +515,7 @@ class UARTPeripheral():
             return data
 
     def write(self, data):
+        # Maybe this should be indicate instead.
         self.ble_handler.uart_write(data)
 
 
@@ -534,6 +539,8 @@ class RCReceiver(UARTPeripheral):
 
     def on_connect(self, *data):
         display.show(self._logo)
+        # TODO: This is nasty. Should be self.write()
+        # The delay is there to come after the char discovery phase.
         t = Timer(
             mode=Timer.ONE_SHOT,
             period=2000,
@@ -786,5 +793,5 @@ class RCTransmitter():
             print("Can't transmit, not connected")
             return
         value = struct.pack("bbbbBBhhB", *self.controller_state)
-        self.ble_handler.uart_write(self._conn_handle, value)
+        self.ble_handler.uart_write(value, self._conn_handle)
         
