@@ -26,9 +26,9 @@ for f in files:
         file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
     chunks = []
     with open(out_file_loc,'rb') as mpy_file:
-        for chunk in iter(partial(mpy_file.read, 2**11), b''):
+        for chunk in iter(partial(mpy_file.read, 2**10), b''):
             chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
-    print(out_file,": ",len(chunks)," chunks of ",2**11)
+    print(out_file,": ",len(chunks)," chunks of ",2**10)
     encoded += [(
         out_file,
         tuple(chunks), 

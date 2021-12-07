@@ -518,14 +518,13 @@ class RCReceiver(UARTPeripheral):
     def __init__(self, ble_handler:BLEHandler=None, name="robot", logo="00000:05550:05950:05550:00000"):
         self._logo=Image(logo)
         self._CONNECT_ANIMATION = [img + self._logo for img in _CONNECT_IMAGES]
-        self.controller_state = [0]*9
         super().__init__(ble_handler, name)
         self.buffer = bytearray(struct.calcsize("bbbbBBhhB"))
 
     def button_pressed(self, button):
         # Test if any buttons are pressed on the remote
         if 0 < button < 9:
-            return self.controller_state[BUTTONS] & 1 << button-1
+            return self.controller_state(BUTTONS) & 1 << button-1
         else:
             return False
 
@@ -543,11 +542,18 @@ class RCReceiver(UARTPeripheral):
         super().on_connect(*data)
 
     def controller_state(self, *indices):
-        self.controller_state = struct.unpack("bbbbBBhhB", self.buffer)
+        try:
+            controller_state = struct.unpack("bbbbBBhhB", self.buffer)
+        except:
+            controller_state = [0]*9
         if indices:
-            return [self.controller_state[i] for i in indices]
+            if len(indices) is 1:
+                return controller_state[indices[0]]
+            else:
+                return [controller_state[i] for i in indices]
         else:
-            return self.controller_state
+            return controller_state
+        
 
 HUB_NOTIFY_DESC = const(0x0F)
 REMOTE_NOTIFY_DESC = const(0x0C)
