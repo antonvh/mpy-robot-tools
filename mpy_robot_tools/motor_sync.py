@@ -1,5 +1,6 @@
 
-import math, utime
+import math
+from utime import sleep_ms, ticks_ms, ticks_diff
 
 # TODO: Build this around the PBMotor class to simplify the code
 # from helpers import PBMotor
@@ -136,12 +137,12 @@ class AMHTimer():
         self.reset_at_next_start = False
         self.__speed_factor = rate/1000
         self.__accel_factor = acceleration/1000000
-        self.start_time = utime.ticks_ms()
+        self.start_time = ticks_ms()
 
     @property
     def time(self):
         if self.running:
-            elapsed = utime.ticks_diff( utime.ticks_ms(), self.start_time )
+            elapsed = ticks_diff( ticks_ms(), self.start_time )
             return int(
                 self.__accel_factor * elapsed**2 +
                 self.__speed_factor * elapsed +
@@ -153,7 +154,7 @@ class AMHTimer():
     @time.setter
     def time(self, setting):
         self.pause_time = setting
-        self.start_time = utime.ticks_ms()
+        self.start_time = ticks_ms()
 
     def pause(self):
         if self.running:
@@ -165,7 +166,7 @@ class AMHTimer():
 
     def start(self):
         if not self.running:
-            self.start_time = utime.ticks_ms()
+            self.start_time = ticks_ms()
             self.running = True
 
     def resume(self):
@@ -179,7 +180,7 @@ class AMHTimer():
 
     @property
     def rate(self):
-        elapsed = utime.ticks_diff( utime.ticks_ms(), self.start_time )
+        elapsed = ticks_diff( ticks_ms(), self.start_time )
         return (self.__accel_factor*elapsed + self.__speed_factor) * 1000
 
     @rate.setter
@@ -294,7 +295,7 @@ class Mechanism():
                 motor.run_to_position(target_position, speed)
 
         # Give the motors time to spin up
-        utime.sleep_ms(50)
+        sleep_ms(50)
         # Check all motors pwms until all maneuvers have ended
         while True:
             pwms = []

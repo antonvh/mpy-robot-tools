@@ -1,9 +1,8 @@
 from hub import Image
-import bluetooth
 import struct
-from time import sleep_ms
+from utime import sleep_ms
 from micropython import const, schedule
-from machine import Timer
+import ubluetooth
 
 CONNECT_IMAGES= [
     Image('03579:00000:00000:00000:00000'),
@@ -29,7 +28,7 @@ _IRQ_CENTRAL_DISCONNECT = const(2)
 _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
 
-if 'FLAG_INDICATE' in dir(bluetooth):
+if 'FLAG_INDICATE' in dir(ubluetooth):
     # We're on MINDSTORMS Robot Inventor
     # New version of bluetooth
     _IRQ_GATTS_WRITE = 3
@@ -81,11 +80,11 @@ _ADV_TYPE_UUID128_COMPLETE = const(0x7)
 _ADV_TYPE_APPEARANCE = const(0x19)
 
 
-_UART_UUID = bluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
-_UART_TX_UUID = bluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
-_UART_RX_UUID = bluetooth.UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
-_LEGO_SERVICE_UUID = bluetooth.UUID("00001623-1212-EFDE-1623-785FEABCD123")
-_LEGO_SERVICE_CHAR = bluetooth.UUID("00001624-1212-EFDE-1623-785FEABCD123")
+_UART_UUID = ubluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
+_UART_TX_UUID = ubluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
+_UART_RX_UUID = ubluetooth.UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
+_LEGO_SERVICE_UUID = ubluetooth.UUID("00001623-1212-EFDE-1623-785FEABCD123")
+_LEGO_SERVICE_CHAR = ubluetooth.UUID("00001624-1212-EFDE-1623-785FEABCD123")
 _UART_TX = (
     _UART_TX_UUID,
     _FLAG_NOTIFY, # | _FLAG_WRITE,
@@ -151,18 +150,18 @@ def _decode_name(payload):
 def _decode_services(payload):
     services = []
     for u in _decode_field(payload, _ADV_TYPE_UUID16_COMPLETE):
-        services.append(bluetooth.UUID(struct.unpack("<h", u)[0]))
+        services.append(ubluetooth.UUID(struct.unpack("<h", u)[0]))
     for u in _decode_field(payload, _ADV_TYPE_UUID32_COMPLETE):
-        services.append(bluetooth.UUID(struct.unpack("<d", u)[0]))
+        services.append(ubluetooth.UUID(struct.unpack("<d", u)[0]))
     for u in _decode_field(payload, _ADV_TYPE_UUID128_COMPLETE):
-        services.append(bluetooth.UUID(u))
+        services.append(ubluetooth.UUID(u))
     return services
 
 class BLEHandler():
     # Basic BT class that can be a central or peripheral or both
     # The central always connects to a peripheral. The Peripheral just advertises.
     def __init__(self, debug=False):
-        self._ble = bluetooth.BLE()
+        self._ble = ubluetooth.BLE()
         self._ble.active(True)
         self._ble.irq(self._irq)
         self._reset()

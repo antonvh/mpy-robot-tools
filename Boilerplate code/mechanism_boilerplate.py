@@ -4,18 +4,25 @@
 ### Source: https://antonsmindstorms.com/
 ### Tutorials: https://www.youtube.com/c/AntonsMindstormsHacks/
 
-import utime
-from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer
+from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer, sine_wave, linear_interpolation, linear, block_wave
+from hub import port
 
-### Boilerplate control loop here
-motors = []
-motor_functions = []
+# Setup
+motors = [
+    port.A.motor,
+]
+motor_functions = [
+    sine_wave(),
+]
+
 my_mechanism = Mechanism(motors, motor_functions)
 my_mechanism.shortest_path_reset()
+
+# Start control loop
 timer= AMHTimer()
 while timer.time < 10000:
     my_mechanism.update_motor_pwms(timer.time)
-    utime.sleep_ms(15)
 my_mechanism.stop()
 
+# Stop program
 raise SystemExit

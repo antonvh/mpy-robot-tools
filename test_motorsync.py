@@ -3,7 +3,7 @@
 ### Also serves as examples of code usage ###
 
 from mpy_robot_tools.motor_sync import AMHTimer, linear_interpolation, sine_wave
-import utime
+from utime import sleep_ms
 
 def test_linear_interpolation():
     print("Now run some linear interpolation tests")
@@ -20,7 +20,7 @@ def test_timer():
     mytimer = AMHTimer()
     mytimer.rate = 500
     mytimer.reset()
-    utime.sleep_ms(500)
+    sleep_ms(500)
     mytimer.pause()
     # At 500 ticks per second, sleeping 500ms should give us about 250 ticks.
     assert 250 <= mytimer.time <= 252
@@ -29,7 +29,7 @@ def test_timer():
     mytimer.rate = -1000
     mytimer.reset()
     mytimer.resume() # Resetting resets time to 0, but doesn't change pause/resume
-    utime.sleep_ms(500)
+    sleep_ms(500)
     mytimer.pause()
     # Counting back from 0 for half a second at 1000 ticks should give us
     assert -505 <= mytimer.time <= -500
@@ -39,7 +39,7 @@ def test_timer():
     duration=2 #s
     mytimer.reset()
     mytimer.start()
-    utime.sleep_ms(duration*1000)
+    sleep_ms(duration*1000)
     mytimer.pause()
     end_time = duration*100 + duration**2*200
     end_rate = 100 + duration*200
@@ -47,13 +47,14 @@ def test_timer():
     assert end_rate <= mytimer.rate <= end_rate+5
 
     # Count down from 5 seconds
-    mytimer.time = 5000
-    mytimer.rate = -1000
+    mytimer.time = 5
+    mytimer.rate = -1
     mytimer.acceleration = 0
     mytimer.resume()
-    for i in range(5000,0,-1000):
-        assert i-5 <= mytimer.time <= i
-        utime.sleep_ms(999) # Leave an ms for pytest to run tests
+    for i in range(5,0,-1):
+        # Count down from five and wait a second in between to check timer.
+        assert mytimer.time is i
+        sleep_ms(995)
 
 
     
