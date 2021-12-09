@@ -17,22 +17,22 @@ BUTTONS = const(8)
 
 class RCReceiver(UARTPeripheral):
     def __init__(self, **kwargs):
+        self.set_logo("00000:05550:05950:05550:00000")
+        # The super init also calls on disconnect.
         super().__init__(**kwargs)
         self.buffer = bytearray(struct.calcsize("bbbbBBhhB"))
-        self.set_logo("00000:05550:05950:05550:00000")
-        self._on_disconnect()
 
     def _on_disconnect(self, *data):
         display.show(self._CONNECT_ANIMATION, delay=100, wait=False, loop=True)
         super()._on_disconnect(*data)
 
     def _on_connect(self, *data):
-        display.show(self._logo)
+        display.show(self.logo)
         # The delay is there to come after the char discovery phase.
         t = Timer(
             mode=Timer.ONE_SHOT,
             period=2000,
-            callback=lambda x:self.write(repr(self._logo))
+            callback=lambda x:self.write(repr(self.logo))
             )
         super()._on_connect(*data)
 
