@@ -1,9 +1,9 @@
 from hub import button, port, motion
-from projects.mpy_robot_tools.bt import (
+from projects.mpy_robot_tools.rc import (
     RCTransmitter, L_STICK_HOR, L_STICK_VER, R_STICK_HOR,
     R_STICK_VER, L_TRIGGER, R_TRIGGER, SETTING1, SETTING2)
 from projects.mpy_robot_tools.helpers import PBMotor
-from time import sleep_ms
+from utime import sleep_ms
 
 # Initialize
 print("starting BLE")
@@ -17,7 +17,6 @@ if not found:
     del(remote_control)
     raise SystemExit
 
-print(remote_control._conn_handle)
 print("Connected")
 
 # This can probably be less. TODO.
@@ -31,7 +30,7 @@ light_sensor.mode((2,0)) # Ambient, Return Pct (0-100)
 # roll0=motion.yaw_pitch_roll()[2]
 
 
-while remote_control._conn_handle:
+while remote_control.is_connected():
     try: # In case you change the program and make exceptions
         # Check for button presses
         remote_control.set_button(1, button.left.was_pressed())

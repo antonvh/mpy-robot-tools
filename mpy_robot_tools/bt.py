@@ -240,10 +240,8 @@ class BLEHandler():
         elif event == _IRQ_PERIPHERAL_CONNECT:
             # Connect to peripheral successful.
             conn_handle, addr_type, addr = data
-            if self.connecting_uart:
+            if self.connecting_uart or self.connecting_lego:
                 self._conn_handle=conn_handle
-            elif self.connecting_lego:
-                self._lego_conn_handle=conn_handle
             self._ble.gattc_discover_services(conn_handle)
 
         elif event == _IRQ_PERIPHERAL_DISCONNECT:
@@ -390,7 +388,7 @@ class BLEHandler():
 
     def connect_lego(self):
         self.connecting_lego = True
-        self._lego_conn_handle = None
+        self._conn_handle = None
         self._start_handle = None
         self._end_handle = None
         self._lego_value_handle = None
@@ -404,7 +402,7 @@ class BLEHandler():
             sleep_ms(500)
             if (not self.connecting_lego): # or (self.timed_out):
                 break
-        return self._lego_conn_handle
+        return self._conn_handle
 
     def uart_write(self, value, conn_handle=None, response=False):
         if not conn_handle: conn_handle = self._conn_handle
@@ -431,7 +429,7 @@ class BLEHandler():
         return self._read_data
 
     def lego_read(self, conn_handle=None):
-        if not conn_handle: conn_handle = self._lego_conn_handle
+        if not conn_handle: conn_handle = self._conn_handle
         self._reading = conn_handle
         self.read(conn_handle, self._lego_value_handle)
         n=0
@@ -444,8 +442,8 @@ class BLEHandler():
         return self._read_data
 
     def lego_write(self, value, conn_handle=None, response=False):
-        if not conn_handle: conn_handle = self._lego_conn_handle
-        if self._lego_value_handle:
+        if not conn_handle: conn_handle = self._conn_handle
+        if self._lego_value_handle and conn_handle:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
 
     # Connect to the specified device (otherwise use cached address from a scan).

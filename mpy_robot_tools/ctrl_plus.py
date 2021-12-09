@@ -44,7 +44,7 @@ class SmartHub():
         self.hub_data = {}
         self.mode_info = {}
 
-    def connected(self):
+    def is_connected(self):
         return self._conn_handle is not None
 
     def connect(self):

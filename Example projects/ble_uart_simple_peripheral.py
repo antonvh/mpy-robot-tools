@@ -1,15 +1,20 @@
-from time import sleep_ms
-
+from projects.mpy_robot_tools.bt import UARTPeripheral
+from utime import sleep_ms
 from mindstorms import MSHub
 # you can test this with the MINDSTORMS BLE RC app
 
 mshub = MSHub()
-ser = UARTPeripheral(name="robot")
+ser = UARTPeripheral(name="robot", buffered=True)
 while not ser.is_connected():
     sleep_ms(100)
 
 while 1:
     if ser.is_connected():
-        mshub.light_matrix.write(eval(ser.read()))
-        sleep_ms(10)
+        data = ser.read()
+        if data:
+            # Echo the data we got
+            ser.write(data)
+            # Unpack the bytes we got with eval and show the result
+            mshub.light_matrix.write(eval(ser.read()))
+        sleep_ms(100)
         # ser.buffer = None
