@@ -41,7 +41,7 @@ while not rcv.is_connected():
 eyes = 100
 timer = AMHTimer()
 while rcv.is_connected():
-    speed, turn, delay_setting = [rcv.controller_state[control] for control in [R_STICK_VER, L_STICK_HOR, SETTING2] ]
+    speed, turn, delay_setting = rcv.controller_state(R_STICK_VER, L_STICK_HOR, SETTING2)
     if rcv.button_pressed(1):
         eyes = 100
     if rcv.button_pressed(2):
