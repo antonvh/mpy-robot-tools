@@ -316,7 +316,8 @@ class BLEHandler():
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, addr_type, addr = data
             print("Disconnected", conn_handle)
-            self._connected_centrals.remove(conn_handle)
+            if conn_handle in  self._connected_centrals:
+                self._connected_centrals.remove(conn_handle)
             if self._central_disconn_callback:
                 self._central_disconn_callback(conn_handle)
 
@@ -469,6 +470,7 @@ class BleUARTBase():
         self.ble_handler = ble_handler
 
     def _on_rx(self, data):
+        # print("RX!", data)
         if self.buffered:
             self.buffer += data
         else:
@@ -477,22 +479,22 @@ class BleUARTBase():
     def any(self):
         return len(self.buffer)
 
-    def read(self, n=None):
+    def read(self, n=-1):
         if not self.buffered:
             return self.buffer
         else:
             bufsize = len(self.buffer)
-            if n > bufsize:
+            if n < 0 or n > bufsize:
                 n = bufsize
             data = self.buffer[:n]
-            del self.buffer[:n]
+            self.buffer = self.buffer[n:]
             return data
     # TODO: Implement readline() and the rest of the UART methods.
 
 
 class UARTPeripheral(BleUARTBase):
     def __init__(self, name="robot", **kwargs):
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
         self.name = name
         self._handle_tx, self._handle_rx = self.ble_handler.register_uart_service()
         self.ble_handler.on_write(self._handle_rx, self._on_rx)
@@ -500,34 +502,45 @@ class UARTPeripheral(BleUARTBase):
         self.ble_handler._central_disconn_callback = self._on_disconnect
         # Sets cannot have duplicate items.
         self.connected_centrals = set()
-        self._on_disconnect()
+        self._on_disconnect(None)
 
     def is_connected(self):
         return len(self.connected_centrals)
 
-    def _on_disconnect(self, conn_handle, addr_type, addr):
-        self.connected_centrals.remove(conn_handle)
-        # TODO: Check if advertising again is necessary. 
+    def _on_disconnect(self, conn_handle):
+        if conn_handle in self.connected_centrals:
+            self.connected_centrals.remove(conn_handle)
+        self.buffer = bytearray()
+        # TODO: Check if advertising again is necessary.
         self.ble_handler.advertise(_advertising_payload(name=self.name, services=[_UART_UUID]))
 
     def _on_connect(self, conn_handle, addr_type, addr):
         self.connected_centrals.add(conn_handle)
 
     def write(self, data):
+        # if not(type(data) is str or type(data) is bytes or type(data) is bytearray):
+        #     data = repr(data)
         # Notify central in 'indicate' mode.
-        self.ble_handler.notify(data, self._handle_tx)
-
+        try:
+            # In case this doesn't get a string or bytes.
+            self.ble_handler.notify(data, self._handle_tx)
+        except Exception as e:
+            self.ble_handler.notify(repr(data), self._handle_tx)
+            print(e)
 
 class UARTCentral(BleUARTBase):
     # Class to connect to single BLE Peripheral
-    # Instantiate more 'centrals' with the same ble handler to connect to 
+    # Instantiate more 'centrals' with the same ble handler to connect to
     # multiple peripherals. Things will probably break if you instantiate
     # multiple ble handlers. (EALREADY)
     def __init__(self, **kwargs):
-        super().__init__(kwargs)
+        super().__init__(**kwargs)
         self._tx_handle = 9 # None
         self._rx_handle = 12 # None
         self._on_disconnect()
+
+    def __del__(self):
+        self.disconnect()
 
     def _on_disconnect(self):
         # The on_disconnect callback is linked to our conn_handle
@@ -551,7 +564,12 @@ class UARTCentral(BleUARTBase):
     def disconnect(self):
         if self.is_connected():
             self.ble_handler.disconnect(self._conn_handle)
-        
+
     def write(self, data):
         if self.is_connected():
-            self.ble_handler.uart_write(data, self._conn_handle)
+            try:
+                # In case this doesn't get a string or bytes.
+                self.ble_handler.uart_write(data, self._conn_handle)
+            except Exception as e:
+                self.ble_handler.uart_write(repr(data), self._conn_handle)
+                print(e)

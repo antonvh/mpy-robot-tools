@@ -1,7 +1,7 @@
 from hub import port
 from time import sleep_ms
 import math
-from projects.mpy_robot_tools.bt import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
+from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer
 from mindstorms import DistanceSensor
 
