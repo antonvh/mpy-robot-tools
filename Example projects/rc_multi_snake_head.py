@@ -1,0 +1,70 @@
+from hub import port
+from time import sleep_ms
+import math
+from projects.mpy_robot_tools.bt import BLEHandler, UARTCentral
+from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
+from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer
+from mindstorms import DistanceSensor
+
+ble = BLEHandler()
+ds = DistanceSensor('A')
+
+seg_1_link = UARTCentral(ble_handler=ble)
+seg_2_link = UARTCentral(ble_handler=ble)
+
+motors = [
+    port.C.motor,
+    port.D.motor,
+    port.E.motor,
+    port.F.motor,
+]
+
+def sine_wave_w_params(amplitude=100, period=1000, offset_factor=0):
+    def function(x, baseline = 0):
+        return baseline + math.sin((x-offset_factor)/period*2*math.pi) * amplitude
+    return function
+
+AMPLITUDE = 60
+PERIOD = 2000
+DELAY = PERIOD*0.2
+DAMPENING = 0.07
+motorfuncs = [
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*0), PERIOD, DELAY*0),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*1), PERIOD, DELAY*1),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*2), PERIOD, DELAY*2),
+    sine_wave_w_params(AMPLITUDE * (1-DAMPENING*3), PERIOD, DELAY*3),
+]
+
+snake_body = Mechanism(motors, motorfuncs)
+
+seg_1_link.connect("snakes1")
+seg_2_link.connect("snakes2")
+
+rcv = RCReceiver(name="snake", ble_handler=ble)
+while not rcv.is_connected():
+    print("Waiting for connection...")
+    sleep_ms(300)
+
+eyes = 100
+timer = AMHTimer()
+while rcv.is_connected():
+    speed, turn, delay_setting = rcv.controller_state(R_STICK_VER, L_STICK_HOR, SETTING2)
+    if rcv.button_pressed(1):
+        eyes = 100
+    if rcv.button_pressed(2):
+        eyes = 50
+    if rcv.button_pressed(3):
+        eyes = 0
+    ds.light_up_all(eyes)
+    timer.rate = speed*20
+    baseline = turn/2
+    snake_body.update_motor_pwms(timer.time, baseline=baseline)
+    seg_1_link.write(repr(timer.time))
+    sleep_ms(20)
+    seg_2_link.write(repr(timer.time))
+    sleep_ms(20)
+
+seg_1_link.disconnect()
+seg_2_link.disconnect()
+
+raise SystemExit

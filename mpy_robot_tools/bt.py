@@ -247,8 +247,10 @@ class BLEHandler():
         elif event == _IRQ_PERIPHERAL_DISCONNECT:
             # Disconnect (either initiated by us or the remote end).
             conn_handle, _, _ = data
-            if self._disconn_callbacks[conn_handle]:
-                self._disconn_callbacks[conn_handle]()
+            if conn_handle in self._disconn_callbacks:
+                if self._disconn_callbacks[conn_handle]:
+                    self._disconn_callbacks[conn_handle]()
+                    #TODO Also delete any notify callbacks
 
         elif event == _IRQ_GATTC_SERVICE_RESULT:
             # Connected device returned a service.
@@ -293,7 +295,8 @@ class BLEHandler():
             conn_handle, value_handle, notify_data = data
             notify_data=bytes(notify_data)
             if conn_handle in self._notify_callbacks:
-                schedule(self._notify_callbacks[conn_handle],notify_data)
+                if self._notify_callbacks[conn_handle]:
+                    schedule(self._notify_callbacks[conn_handle],notify_data)
 
         elif event == _IRQ_GATTC_READ_RESULT:
             # A read completed successfully.
@@ -325,8 +328,9 @@ class BLEHandler():
             # TODO: Test if peripherals can also write to centrals or whether they can only indicate.
             conn_handle, value_handle = data
             if value_handle in self._write_callbacks:
-                value = self._ble.gatts_read(value_handle)
-                self._write_callbacks[value_handle](value)
+                if self._write_callbacks[value_handle]:
+                    value = self._ble.gatts_read(value_handle)
+                    self._write_callbacks[value_handle](value)
 
         else:
             self.info("Unhandled event, no problem: ", hex(event), "data:", data)
@@ -364,7 +368,7 @@ class BLEHandler():
     def stop_scan(self):
         self._ble.gap_scan(None)
 
-    def connect_uart(self, name="robot", on_disconnect = None, on_notify = None):
+    def connect_uart(self, name="robot", on_disconnect = None, on_notify = None, time_out=10):
         self._search_name = name
         # self.timed_out = False
         self.connecting_uart = True
@@ -376,17 +380,17 @@ class BLEHandler():
         self._addr_type = None
         self._addr = None
         self.scan()
-        for i in range(20):
-            print("Waiting for connection...")
-            sleep_ms(500)
-            if (not self.connecting_uart): # or (self._conn_handle):
+        for i in range(time_out):
+            print("Connecting to UART Peripheral:", name)
+            sleep_ms(1000)
+            if not self.connecting_uart:
                 break
         if self._conn_handle:
             self._notify_callbacks[self._conn_handle] = on_notify
             self._disconn_callbacks[self._conn_handle] = on_disconnect
         return self._conn_handle, self._rx_handle, self._tx_handle
 
-    def connect_lego(self):
+    def connect_lego(self, time_out=10):
         self.connecting_lego = True
         self._conn_handle = None
         self._start_handle = None
@@ -394,19 +398,17 @@ class BLEHandler():
         self._lego_value_handle = None
         self._addr_type = None
         self._addr = None
-        self._addr_type = None
-        self._addr = None
         self.scan()
-        for i in range(20):
-            print("Waiting for connection...")
-            sleep_ms(500)
-            if (not self.connecting_lego): # or (self.timed_out):
+        for i in range(time_out):
+            print("Connecting to a LEGO Smart Hub...")
+            sleep_ms(1000)
+            if not self.connecting_lego:
                 break
         return self._conn_handle
 
-    def uart_write(self, value, conn_handle=None, response=False):
-        if not conn_handle: conn_handle = self._conn_handle
-        self._ble.gattc_write(conn_handle, self._rx_handle, value, 1 if response else 0)
+    def uart_write(self, value, conn_handle, rx_handle=12, response=False):
+        # if not conn_handle: conn_handle = self._conn_handle
+        self._ble.gattc_write(conn_handle, rx_handle, value, 1 if response else 0)
 
     def read(self, conn_handle, val_handle, callback=None):
         self._read_callback = callback
@@ -519,12 +521,13 @@ class UARTPeripheral(BleUARTBase):
         # if not(type(data) is str or type(data) is bytes or type(data) is bytearray):
         #     data = repr(data)
         # Notify central in 'indicate' mode.
-        try:
-            # In case this doesn't get a string or bytes.
-            self.ble_handler.notify(data, self._handle_tx)
-        except Exception as e:
-            self.ble_handler.notify(repr(data), self._handle_tx)
-            print(e)
+        if self.is_connected():
+            try:
+                # In case this doesn't get a string or bytes.
+                self.ble_handler.notify(data, self._handle_tx)
+            except Exception as e:
+                # self.ble_handler.notify(repr(data), self._handle_tx)
+                print(e)
 
 class UARTCentral(BleUARTBase):
     # Class to connect to single BLE Peripheral
@@ -567,7 +570,7 @@ class UARTCentral(BleUARTBase):
         if self.is_connected():
             try:
                 # In case this doesn't get a string or bytes.
-                self.ble_handler.uart_write(data, self._conn_handle)
+                self.ble_handler.uart_write(data, self._conn_handle, self._rx_handle)
             except Exception as e:
-                self.ble_handler.uart_write(repr(data), self._conn_handle)
+                # self.ble_handler.uart_write(repr(data), self._conn_handle)
                 print(e)

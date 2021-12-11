@@ -1,0 +1,49 @@
+from hub import port, Image, display
+from projects.mpy_robot_tools.bt import UARTPeripheral, CONNECT_IMAGES
+from projects.mpy_robot_tools.motor_sync import Mechanism, sine_wave
+from projects.mpy_robot_tools.light_matrix import image_99
+
+# Change the SEGMENT number before downloading !!
+SEGMENT = 1
+LOGO = image_99(50+SEGMENT) # 5 looks like an S.
+CONNECT_ANIMATION = [LOGO + img for img in CONNECT_IMAGES]
+head_link = UARTPeripheral(name="snakes"+str(SEGMENT))
+
+motors = [
+    port.C.motor,
+    port.D.motor,
+    port.E.motor,
+    port.F.motor,
+]
+
+AMPLITUDE = 60
+PERIOD = 2000
+DELAY = PERIOD * 0.2
+DAMPENING = 0.02
+motorfuncs = [
+    sine_wave(AMPLITUDE * (1- DAMPENING*(0 + SEGMENT*4)), PERIOD, DELAY * (0 + SEGMENT*4) ),
+    sine_wave(AMPLITUDE * (1- DAMPENING*(1 + SEGMENT*4)), PERIOD, DELAY * (1 + SEGMENT*4) ),
+    sine_wave(AMPLITUDE * (1- DAMPENING*(2 + SEGMENT*4)), PERIOD, DELAY * (2 + SEGMENT*4) ),
+    sine_wave(AMPLITUDE * (1- DAMPENING*(3 + SEGMENT*4)), PERIOD, DELAY * (3 + SEGMENT*4) ),
+]
+
+snake_body = Mechanism(motors, motorfuncs)
+
+head_time = 0
+animation_showing = False
+while 1:
+    if head_link.is_connected():
+        display.show(LOGO)
+        animation_showing = False
+        data = head_link.read()
+        if data:
+            head_time = eval(data)
+        snake_body.update_motor_pwms(head_time)
+    else:
+        if not animation_showing:
+            display.show(CONNECT_ANIMATION, delay=100, wait=False, loop=True)
+            animation_showing = True
+        snake_body.stop()
+# seg_2_link.disconnect()
+
+raise SystemExit
