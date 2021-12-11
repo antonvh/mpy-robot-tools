@@ -1,4 +1,4 @@
-# Polyfill for testing purposes
+# Stub for testing purposes
 
 class motor():
     pass
