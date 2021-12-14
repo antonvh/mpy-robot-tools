@@ -5,7 +5,7 @@ from projects.mpy_robot_tools.rc import (
     L_TRIGGER, R_TRIGGER, SETTING1, SETTING2, BUTTONS
 )
 from projects.mpy_robot_tools.ctrl_plus import SmartHub
-from mpy_robot_tools.light_matrix import codelines, LMAnimation
+from mpy_robot_tools.light import codelines, LMAnimation
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer, sine_wave, linear_interpolation, linear, block_wave
 from projects.mpy_robot_tools.helpers import clamp_int, track_target, scale, PBMotor
 from projects.mpy_robot_tools.pyhuskylens import (
