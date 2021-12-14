@@ -1,7 +1,7 @@
 from hub import port, Image, display
 from projects.mpy_robot_tools.bt import UARTPeripheral, CONNECT_IMAGES
 from projects.mpy_robot_tools.motor_sync import Mechanism, sine_wave
-from projects.mpy_robot_tools.light_matrix import image_99
+from projects.mpy_robot_tools.light import image_99
 
 # Change the SEGMENT number before downloading !!
 SEGMENT = 1
