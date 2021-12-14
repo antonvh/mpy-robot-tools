@@ -1,7 +1,7 @@
 # Boilerplate code for animating the display of the hub in sync with a timer
 # (c) 2021 Anton's Mindstorms Hacks
 
-from mpy_robot_tools.light_matrix import codelines, LMAnimation
+from mpy_robot_tools.light import codelines, LMAnimation
 from mpy_robot_tools.motor_sync import AMHTimer
 
 # ASCII art lightness
