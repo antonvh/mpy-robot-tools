@@ -1,3 +1,15 @@
+# Author: Anton's Mindstorms (Anton Vanhoucke)
+# https://antonsmindstorms.com
+
+# This code is meant to run a steering wheel 
+# and connects to the LEGO MINDSTORMS Robot Inventor Snake
+# The script running on the snake is either rc_snake.py (single segment)
+# or rc_multi_snake_head.py (multisegment)
+# FREE Building instructions for the steering wheel:
+# https://antonsmindstorms.com/product/remote-control-steering-wheel-with-spike-prime/
+# Building instructions for the snake:
+# https://antonsmindstorms.com/product/robot-snake-with-multiple-51515-inventor-sets/
+
 from hub import button, port, motion
 from projects.mpy_robot_tools.rc import (
     RCTransmitter, L_STICK_HOR, L_STICK_VER, R_STICK_HOR,

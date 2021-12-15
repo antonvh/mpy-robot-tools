@@ -1,3 +1,13 @@
+# Author: Anton's Mindstorms (Anton Vanhoucke)
+# https://antonsmindstorms.com
+
+# This code is meant to run on a LEGO MINDSTORMS Robot Inventor Snake
+# Connect to it using a steering wheel or app:
+# https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc&hl=nl&gl=US
+# Building instructions for the snake:
+# https://antonsmindstorms.com/product/robot-snake-with-multiple-51515-inventor-sets/
+
+
 from hub import port
 from time import sleep_ms
 import math

@@ -1,3 +1,11 @@
+# Author: Anton's Mindstorms (Anton Vanhoucke)
+# https://antonsmindstorms.com
+
+# This code is meant to run a steering wheel 
+# and connects to the Extreme Offroader 42099 set
+# FREE Building instructions for the steering wheel:
+# https://antonsmindstorms.com/product/remote-control-steering-wheel-with-spike-prime/
+
 from hub import port, motion, button
 from projects.mpy_robot_tools.ctrl_plus import SmartHub
 from projects.mpy_robot_tools.helpers import PBMotor

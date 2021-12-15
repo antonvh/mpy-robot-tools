@@ -1,3 +1,12 @@
+# Author: Anton's Mindstorms (Anton Vanhoucke)
+# https://antonsmindstorms.com
+
+# This code is meant to run on a segment of the LEGO MINDSTORMS Robot Inventor Snake
+# and waits for connection from the head. Update the Segment number!
+# Building instructions for the snake:
+# https://antonsmindstorms.com/product/robot-snake-with-multiple-51515-inventor-sets/
+
+
 from hub import port, Image, display
 from projects.mpy_robot_tools.bt import UARTPeripheral, CONNECT_IMAGES
 from projects.mpy_robot_tools.motor_sync import Mechanism, sine_wave
@@ -5,6 +14,7 @@ from projects.mpy_robot_tools.light import image_99
 
 # Change the SEGMENT number before downloading !!
 SEGMENT = 1
+
 LOGO = image_99(50+SEGMENT) # 5 looks like an S.
 CONNECT_ANIMATION = [LOGO + img for img in CONNECT_IMAGES]
 head_link = UARTPeripheral(name="snakes"+str(SEGMENT))

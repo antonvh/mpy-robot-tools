@@ -1,3 +1,8 @@
+# Author: Anton's Mindstorms (Anton Vanhoucke)
+# https://antonsmindstorms.com
+
+# This code connects to a robot running ble_uart_simple_peripheral.py
+
 from projects.mpy_robot_tools.bt import UARTCentral
 from utime import sleep_ms
 
