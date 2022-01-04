@@ -15,6 +15,7 @@ from projects.mpy_robot_tools.bt import BLEHandler, UARTCentral
 from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer
 from mindstorms import DistanceSensor
+from mindstorms.control import wait_for_seconds
 
 ble = BLEHandler()
 ds = DistanceSensor('A')
@@ -53,7 +54,7 @@ seg_2_link.connect("snakes2")
 rcv = RCReceiver(name="snake", ble_handler=ble)
 while not rcv.is_connected():
     print("Waiting for connection...")
-    sleep_ms(300)
+    wait_for_seconds(0.3)
 
 eyes = 100
 timer = AMHTimer()
@@ -70,9 +71,9 @@ while rcv.is_connected():
     baseline = turn/2
     snake_body.update_motor_pwms(timer.time, baseline=baseline)
     seg_1_link.write(repr(timer.time))
-    sleep_ms(20)
+    wait_for_seconds(0.02)
     seg_2_link.write(repr(timer.time))
-    sleep_ms(20)
+    wait_for_seconds(0.02)
 
 seg_1_link.disconnect()
 seg_2_link.disconnect()
