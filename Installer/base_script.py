@@ -1,19 +1,20 @@
-import ubinascii, os, machine,uhashlib
+import ubinascii, os, machine,uhashlib, time
 from ubinascii import hexlify
-from utime import sleep_ms
 
-encoded={}
+mpy_installer_files_encoded={}
 
 def calc_hash(b):
     return hexlify(uhashlib.sha256(b).digest()).decode()
 
 error=False
+exception=''
+
 try:
     os.mkdir('/projects/mpy_robot_tools')
 except:
     pass
 
-for file, code, hash_gen in encoded:
+for file, code, hash_gen in mpy_installer_files_encoded:
     target_loc = '/projects/mpy_robot_tools/'+file
 
     # check for file and remove
@@ -21,36 +22,42 @@ for file, code, hash_gen in encoded:
         os.remove(target_loc)
         print("Removing old file ", file)
     except OSError:
-        pass
+        print("ERROR: removing old file ", file)
 
-    print("Writing new file ", file)
     # hash_gen=code[1]
-
-    print('writing '+file+' to folder /projects/mpy_robot_tools')
-    with open(target_loc,'wb') as f:
-        for chunk in code:
-            f.write(ubinascii.a2b_base64(chunk))
-    del code
+    try:
+        print('writing '+file+' to Hub /projects/mpy_robot_tools')
+        with open(target_loc,'wb') as f:
+            for chunk in code:
+                f.write(ubinascii.a2b_base64(chunk))
+        del code
+    except:
+        error=True
+        exception += ('writing:' +file+ ',')
+        print(e)
 
     try:
         print('Finished writing '+file+', Checking hash.')
         result=open(target_loc,'rb').read()
+        time.sleep(1)
         hash_check=calc_hash(result)
 
-        print('Hash generated: ',hash_gen)
-
         if hash_check != hash_gen:
-            print('Failed hash of .mpy on SPIKE: '+hash_check)
             error=True
+            exception += (file+ ' hash_expected:' +hash_check+ ' returned_hash:' +hash_gen+ ',')
+        else:
+            print('Good Hash: ',file, hash_gen)
+
     except Exception as e:
-        # memory allocation, no halting error
+        error=True
+        exception += (file+ ' hash_expected:' +hash_check+ ' returned_hash:' +hash_gen+ ',')
         print(e)
 
 
 if not error:
-    print('Library written succesfully. UNPLUG USB now!')
-    sleep_ms(7000)
+    print('Library written succesfully, rebooting. UNPLUG USB now!')
+    time.sleep(0.5)
     print("Resetting....")
     machine.reset()
 else:
-    print('Failure in writing library!')
+    print('Errors:', exception)
