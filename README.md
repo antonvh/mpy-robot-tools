@@ -27,21 +27,22 @@ UNPLUG The hub before it completes the restart after the script!!
 
 - Use the [MINDSTORMS Ble RC Anroid app](https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc) or another Smart Hub to [remote control your robot](https://gist.github.com/antonvh/1f1d9c563268b4a8e9e1d7297e62ad53) or [Hot Rod](https://gist.github.com/antonvh/88548d95e771043662f038de451e28f2)
 
-Example
-- RCReceiver() - Receives RC commands from the android app or RCTransmitter class.
-``` python
-rcv = RCReceiver(name="snake")
-while rcv.is_connected():
-    speed, turn, delay_setting = rcv.controller_state(R_STICK_VER, L_STICK_HOR, SETTING2)
-```
-- RCTransmitter() - Connects to an RCReceiver and transmits the state of 9 gamepad-like controls.
-``` python
-remote_control = RCTransmitter()
-remote_control.connect(name="snake")
-remote_control.set_stick(L_STICK_HOR, steer_angle )
-remote_control.set_stick(R_STICK_VER, forward)
-remote_control.transmit()
-```
+- Example
+  ``` python
+  # RCReceiver() - Receives RC commands from the android app or RCTransmitter class.
+  rcv = RCReceiver(name="snake")
+  while rcv.is_connected():
+      speed, turn, delay_setting = rcv.controller_state(R_STICK_VER, L_STICK_HOR, SETTING2)
+  ```
+
+  ``` python
+  # RCTransmitter() - Connects to an RCReceiver and transmits the state of 9 gamepad-like controls.
+  remote_control = RCTransmitter()
+  remote_control.connect(name="snake")
+  remote_control.set_stick(L_STICK_HOR, steer_angle )
+  remote_control.set_stick(R_STICK_VER, forward)
+  remote_control.transmit()
+  ```
 
 [rctrl_plus.py](mpy_robot_tools/ctrl_plus.py)
 
