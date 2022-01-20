@@ -14,10 +14,18 @@ except:
     pass
 
 for file, code, hash_gen in encoded:
-    print("Writing file ", file)
-    # hash_gen=code[1]
     target_loc = '/projects/mpy_robot_tools/'+file
-    
+
+    # check for file and remove
+    try: # remove any old versions of library
+        os.remove(target_loc)
+        print("Removing old file ", file)
+    except OSError:
+        pass
+
+    print("Writing new file ", file)
+    # hash_gen=code[1]
+
     print('writing '+file+' to folder /projects/mpy_robot_tools')
     with open(target_loc,'wb') as f:
         for chunk in code:
