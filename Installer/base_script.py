@@ -1,5 +1,6 @@
 import ubinascii, os, machine,uhashlib
 from ubinascii import hexlify
+from utime import sleep_ms
 
 encoded={}
 
@@ -38,7 +39,9 @@ for file, code, hash_gen in encoded:
 
 
 if not error:
-    print('Library written succesfully. Resetting....')
+    print('Library written succesfully. UNPLUG USB now!')
+    sleep_ms(7000)
+    print("Resetting....")
     machine.reset()
 else:
     print('Failure in writing library!')
