@@ -6,7 +6,13 @@ This is a collection of classes and methods that help you to animate robots. The
 
 Copy the code from the [install script](Installer/install_mpy_robot_tools.py) to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program. Then run it once.
 
-UNPLUG The hub before it completes the restart after the script!!
+UNPLUG The hub before it completes the restart after the script!! Watch the console output for action to unplug.
+
+Caution if the Spike/Mindstorm app asks for a firmewae update and you accept you will need to re-install. You can just disconect and ignore the update the Hub will be in a "big square" for waiting for update just long press the center button and power cycle the hub to reconect to the lego app, it wont ask a second time to update in the instance.
+
+### Uninstall ###
+
+To uninstall reboot the lego hub and the lego Spike/Mindstorm app it will ask to update this will remove the tools.
 
 ## Overview of the tools ##
 
