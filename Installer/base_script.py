@@ -43,6 +43,7 @@ for file, code, hash_gen in encoded:
             print('Failed hash of .mpy on SPIKE: '+hash_check)
             error=True
     except Exception as e:
+        # memory allocation, no halting error
         print(e)
 
 
