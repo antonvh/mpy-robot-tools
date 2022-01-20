@@ -31,7 +31,7 @@ for file, code, hash_gen in mpy_installer_files_encoded:
             for chunk in code:
                 f.write(ubinascii.a2b_base64(chunk))
         del code
-    except:
+    except Exception as e:
         error=True
         exception += ('writing:' +file+ ',')
         print(e)
