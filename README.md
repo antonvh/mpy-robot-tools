@@ -51,6 +51,18 @@ remote_control.transmit()
 - clamp_int(n) - returns an an int between -100 and 100, clamping higher or lower numbers.
 - scale(n, (source_min, source_max), (target_min, target_max)) - Returns a number scaled to a different range of numbers
 
+### Remote UART library: uartremote.py ###
+NOTE: This is temporary. In the future I hope to replace with [serialtalk](https://github.com/antonvh/SerialTalk). It's the same idea but it also works over bluetooth and websockets.
+This is a library for robust, near real-time communication between two UART devices. We developed it with LEGO EV3, SPIKE Prime and other MicroPython (ESP) modules. The library has the following properties:
+- It is fast enough to read sensor data at 30-50Hz.
+- It is fully symmetrical, so master and slave can have the same import.
+- It includes a RAW REPL mode to upload code to a slave module. This means you can develop code for both modules in one file.
+- It is implemented in MicroPython and Arduino/C code. With arduino code, much higher sensor reading speeds are possible, but flashing is a bit less user friendly.
+- The library has a command loop to wait and listen for calls. That loop is customizable and non-blocking so you can add your own code to it.
+- The C-struct-like encoding is included in the payload, so the other side always knows how to decode it.
+
+Read more in the [README file of that library.](Submodules/UartRemote/README.md)
+
 ## To Do ##
 ### Documentation ###
 Please fork and help out this project by adding documentation. Could be docstrings, README or tutorials.

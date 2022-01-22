@@ -1,3 +1,6 @@
 [submodule "Submodules/LEGO-HuskyLenslib"]
 	path = Submodules/LEGO-HuskyLenslib
 	url = https://github.com/antonvh/LEGO-HuskyLenslib
+[submodule "Submodules/UartRemote"]
+	path = Submodules/UartRemote
+	url = https://github.com/antonvh/UartRemote
