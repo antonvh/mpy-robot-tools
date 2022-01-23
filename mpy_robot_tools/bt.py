@@ -307,7 +307,7 @@ class BLEHandler():
             if self._read_callback:
                 self._read_callback(data)
 
-        if event == _IRQ_CENTRAL_CONNECT:
+        elif event == _IRQ_CENTRAL_CONNECT:
             conn_handle, addr_type, addr = data
             print("New connection", conn_handle)
             self._connected_centrals.add(conn_handle)
