@@ -74,4 +74,4 @@ Read more in the [README file of that library.](Submodules/UartRemote/README.md)
 - Please fork and help out this project by adding documentation. Could be docstrings, README or tutorials.
 
 ### Stubs ###
-For programming convenience in VS Code I would love to collect stubs of all LEGO hub libraries. I've been looking into micropython-stubber but it didn't work for me.
+For programming convenience in VS Code I woul love to collect stubs of all LEGO hub libraries. I've been looking into micropython-stubber but it didn't work for me.
