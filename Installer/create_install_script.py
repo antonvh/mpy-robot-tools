@@ -15,7 +15,6 @@ import os
 from functools import partial
 
 LIB = '../mpy_robot_tools/'
-LIB_UART = '../../LMS-uart-esp/Libraries/UartRemote/MicroPython/uartremote.py'
 MPY_LIB = 'mpy/'
 INSTALLER = 'install_mpy_robot_tools.py'
 BASE_SCRIPT = 'base_script.py'
@@ -48,15 +47,11 @@ def mpy_tools_compile(py_file_in, build_dir):
     # string for final installer
     mpy_installer_files_encoded += [(
         out_file,
-        tuple(chunks), 
+        tuple(chunks),
         file_hash
     )]
 
     return mpy_installer_files_encoded
-
-if os.path.exists(LIB_UART):
-    print("found UART library")
-    mpy_tools_compile(LIB_UART, MPY_LIB)
 
 files = [f for f in os.listdir(LIB)]
 for f in files:

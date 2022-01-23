@@ -17,13 +17,6 @@ except:
 for file, code, hash_gen in mpy_installer_files_encoded:
     target_loc = '/projects/mpy_robot_tools/'+file
 
-    # check for file and remove
-    try: # remove any old versions of library
-        os.remove(target_loc)
-        print("Removing old file ", file)
-    except OSError:
-        print("ERROR: removing old file ", file)
-
     # hash_gen=code[1]
     try:
         print('writing '+file+' to Hub /projects/mpy_robot_tools')
@@ -52,7 +45,6 @@ for file, code, hash_gen in mpy_installer_files_encoded:
         error=True
         exception += (file+ ' hash_expected:' +hash_check+ ' returned_hash:' +hash_gen+ ',')
         print(e)
-
 
 if not error:
     print('Library written succesfully, rebooting. UNPLUG USB now!')
