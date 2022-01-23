@@ -6,7 +6,7 @@ This is a collection of classes and methods that help you to animate robots. The
 
 Copy the code from the [install script](Installer/install_mpy_robot_tools.py) to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program. Then run it once.
 
-UNPLUG The hub before it completes, the hub will restart after the script!!
+UNPLUG The hub before it completes, the hub will restart after the script!
 
 ## Overview of the libraries ##
 
