@@ -4,24 +4,6 @@ from utime import sleep_ms
 from micropython import const, schedule
 import ubluetooth
 
-CONNECT_IMAGES= [
-    Image('03579:00000:00000:00000:00000'),
-    Image('00357:00000:00000:00000:00000'),
-    Image('00035:00000:00000:00000:00000'),
-    Image('00003:00000:00000:00000:00000'),
-    Image('00000:00000:00000:00000:00009'),
-    Image('00000:00000:00000:00000:00097'),
-    Image('00000:00000:00000:00000:00975'),
-    Image('00000:00000:00000:00000:09753'),
-    Image('00000:00000:00000:00000:97530'),
-    Image('00000:00000:00000:00000:75300'),
-    Image('00000:00000:00000:00000:53000'),
-    Image('90000:00000:00000:00000:30000'),
-    Image('79000:00000:00000:00000:00000'),
-    Image('57900:00000:00000:00000:00000'),
-    Image('35790:00000:00000:00000:00000'),
-]
-
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
 
@@ -29,7 +11,7 @@ _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
 
 if 'FLAG_INDICATE' in dir(ubluetooth):
-    # We're on MINDSTORMS Robot Inventor
+    # We're on MINDSTORMS Robot Inventor or ESP32
     # New version of bluetooth
     _IRQ_GATTS_WRITE = 3
     _IRQ_SCAN_RESULT = 5

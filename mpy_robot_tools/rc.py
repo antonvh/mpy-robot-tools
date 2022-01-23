@@ -1,9 +1,31 @@
-from .bt import UARTPeripheral, UARTCentral, CONNECT_IMAGES
+from .bt import UARTPeripheral, UARTCentral
 from .helpers import clamp_int
 from micropython import const
-from hub import display, Image
 import struct
 from machine import Timer
+
+try:
+    from hub import display, Image
+except:
+    from hub_stub import display, Image
+
+CONNECT_IMAGES= [
+    Image('03579:00000:00000:00000:00000'),
+    Image('00357:00000:00000:00000:00000'),
+    Image('00035:00000:00000:00000:00000'),
+    Image('00003:00000:00000:00000:00000'),
+    Image('00000:00000:00000:00000:00009'),
+    Image('00000:00000:00000:00000:00097'),
+    Image('00000:00000:00000:00000:00975'),
+    Image('00000:00000:00000:00000:09753'),
+    Image('00000:00000:00000:00000:97530'),
+    Image('00000:00000:00000:00000:75300'),
+    Image('00000:00000:00000:00000:53000'),
+    Image('90000:00000:00000:00000:30000'),
+    Image('79000:00000:00000:00000:00000'),
+    Image('57900:00000:00000:00000:00000'),
+    Image('35790:00000:00000:00000:00000'),
+]
 
 L_STICK_HOR = const(0)
 L_STICK_VER = const(1)
