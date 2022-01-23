@@ -391,6 +391,7 @@ class BLEHandler():
     def uart_write(self, value, conn_handle, rx_handle=12, response=False):
         # if not conn_handle: conn_handle = self._conn_handle
         self._ble.gattc_write(conn_handle, rx_handle, value, 1 if response else 0)
+        self.info("GATTC Written ", value)
 
     def read(self, conn_handle, val_handle, callback=None):
         self._read_callback = callback
@@ -429,6 +430,7 @@ class BLEHandler():
         if not conn_handle: conn_handle = self._conn_handle
         if self._lego_value_handle and conn_handle is not None:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
+            self.info("GATTC Written ", value)
 
     # Connect to the specified device (otherwise use cached address from a scan).
     def connect(self, addr_type, addr):
