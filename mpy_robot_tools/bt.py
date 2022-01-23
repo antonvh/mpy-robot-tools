@@ -347,7 +347,7 @@ class BLEHandler():
 
     def notify(self, data, val_handle, conn_handle=None):
         # Notify all connected centrals interested in the handle
-        if conn_handle:
+        if conn_handle is None:
             self._ble.gatts_notify(conn_handle, val_handle, data)
         else:
             for conn_handle in self._connected_centrals:
@@ -445,7 +445,7 @@ class BLEHandler():
 
     def lego_write(self, value, conn_handle=None, response=False):
         if not conn_handle: conn_handle = self._conn_handle
-        if self._lego_value_handle and conn_handle:
+        if self._lego_value_handle and conn_handle is not None:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
 
     # Connect to the specified device (otherwise use cached address from a scan).

@@ -49,7 +49,7 @@ class SmartHub():
 
     def connect(self):
         self._conn_handle = self.ble_handler.connect_lego()
-        if self._conn_handle:
+        if self._conn_handle is not None:
             sleep_ms(500)
             # Subscribe to motion data of SMART Hubs
             self.write(0x0A, 0x00, 0x41, __HUB_PORT_ACC, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01)
@@ -77,7 +77,7 @@ class SmartHub():
             print("Connection failed")
 
     def disconnect(self):
-        if self._conn_handle:
+        if self._conn_handle is not None:
             self.ble_handler.disconnect(self._conn_handle)
             self._conn_handle = None
 
