@@ -11,7 +11,9 @@ Caution if the Spike/Mindstorm app asks for a firmewae update and you accept you
 
 ### Uninstall ###
 
-To uninstall remove the directory out of the /projects folder using a script, or something like ThonnyIDE File manager. To factory reset your hub to factory settings, using LEGO app, press the Hub Connection Icon on the Programming Canvas, press the More Button (···) in the Dashboard tab and select Reset Settings. Press OK to confirm the reset, or Cancel to keep the current settings. Be careful - resetting your Hub will delete all of your programs, and they can’t be recovered!
+To uninstall remove the directory out of the /projects folder using a script, or something like ThonnyIDE File manager. 
+
+To factory reset your hub to factory settings, using LEGO app, press the Hub Connection Icon on the Programming Canvas, press the More Button (···) in the Dashboard tab and select Reset Settings. Press OK to confirm the reset, or Cancel to keep the current settings. Be careful - resetting your Hub will delete all of your programs, and they can’t be recovered!
 
 
 ## Overview of the tools ##
