@@ -3,10 +3,17 @@
 This is a collection of classes and methods that help you to animate robots. They are specifically aimed at LEGO MINDSTORMS and SPIKE Prime robots, although the classes are abstract enough to be useful elsewhere. The functionality is documented inside the code. Here are just the main usages. For in-depth articles see my blog on [antonsmindstorms.com](https://antonsmindstorms.com).
 
 ## Installation ##
+1. Copy the code from the [install script](Installer/install_mpy_robot_tools.py) ([click the Copy raw contents button](https://github.blog/changelog/2021-09-20-quickly-copy-the-contents-of-a-file-to-the-clipboard/))  to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program.
+2. Then run it once, it will take additional time to transfer to the Hub please use patience.
+3. UNPLUG The hub before it completes the restart after the script!! Watch the console output for action to unplug.
 
-Copy the code from the [install script](Installer/install_mpy_robot_tools.py) to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program. Then run it once.
+Caution if the Spike/Mindstorm app asks for a firmewae update and you accept you will need to re-install. You can just disconect and ignore the update the Hub will be in a "big square" for waiting for update just long press the center button and power cycle the hub to reconect to the lego app, it wont ask a second time to update in the instance.
 
-UNPLUG The hub before it completes, the hub will restart after the script!
+### Uninstall ###
+
+To uninstall remove the directory out of the /projects folder using a script, or something like ThonnyIDE File manager. 
+
+To factory reset your hub to factory settings, using LEGO app, press the Hub Connection Icon on the Programming Canvas, press the More Button (···) in the Dashboard tab and select Reset Settings. Press OK to confirm the reset, or Cancel to keep the current settings. Be careful - resetting your Hub will delete all of your programs, and they can’t be recovered!
 
 ## Overview of the libraries ##
 
