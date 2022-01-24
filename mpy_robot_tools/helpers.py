@@ -1,5 +1,8 @@
 # from machine import Timer
-from hub import port
+try:
+    from hub import port
+except:
+    from hub_stub import port
 
 def clamp_int(n, floor=-100, ceiling=100):
     return max(min(int(n),ceiling),floor)

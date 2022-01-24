@@ -4,24 +4,6 @@ from utime import sleep_ms
 from micropython import const, schedule
 import ubluetooth
 
-CONNECT_IMAGES= [
-    Image('03579:00000:00000:00000:00000'),
-    Image('00357:00000:00000:00000:00000'),
-    Image('00035:00000:00000:00000:00000'),
-    Image('00003:00000:00000:00000:00000'),
-    Image('00000:00000:00000:00000:00009'),
-    Image('00000:00000:00000:00000:00097'),
-    Image('00000:00000:00000:00000:00975'),
-    Image('00000:00000:00000:00000:09753'),
-    Image('00000:00000:00000:00000:97530'),
-    Image('00000:00000:00000:00000:75300'),
-    Image('00000:00000:00000:00000:53000'),
-    Image('90000:00000:00000:00000:30000'),
-    Image('79000:00000:00000:00000:00000'),
-    Image('57900:00000:00000:00000:00000'),
-    Image('35790:00000:00000:00000:00000'),
-]
-
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
 
@@ -29,7 +11,7 @@ _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
 
 if 'FLAG_INDICATE' in dir(ubluetooth):
-    # We're on MINDSTORMS Robot Inventor
+    # We're on MINDSTORMS Robot Inventor or ESP32
     # New version of bluetooth
     _IRQ_GATTS_WRITE = 3
     _IRQ_SCAN_RESULT = 5
@@ -286,9 +268,9 @@ class BLEHandler():
             if self._char_result_callback:
                 self._char_result_callback(conn_handle, value_handle, uuid)
 
-        # elif event == _IRQ_GATTC_WRITE_DONE:
-        #    conn_handle, value_handle, status = data
-        #    # print("TX complete")
+        elif event == _IRQ_GATTC_WRITE_DONE:
+           conn_handle, value_handle, status = data
+           self.info("TX complete on", conn_handle)
 
         elif event == _IRQ_GATTC_NOTIFY:
             # print("_IRQ_GATTC_NOTIFY")
@@ -307,7 +289,7 @@ class BLEHandler():
             if self._read_callback:
                 self._read_callback(data)
 
-        if event == _IRQ_CENTRAL_CONNECT:
+        elif event == _IRQ_CENTRAL_CONNECT:
             conn_handle, addr_type, addr = data
             print("New connection", conn_handle)
             self._connected_centrals.add(conn_handle)
@@ -347,7 +329,7 @@ class BLEHandler():
 
     def notify(self, data, val_handle, conn_handle=None):
         # Notify all connected centrals interested in the handle
-        if conn_handle:
+        if conn_handle is None:
             self._ble.gatts_notify(conn_handle, val_handle, data)
         else:
             for conn_handle in self._connected_centrals:
@@ -409,6 +391,7 @@ class BLEHandler():
     def uart_write(self, value, conn_handle, rx_handle=12, response=False):
         # if not conn_handle: conn_handle = self._conn_handle
         self._ble.gattc_write(conn_handle, rx_handle, value, 1 if response else 0)
+        self.info("GATTC Written ", value)
 
     def read(self, conn_handle, val_handle, callback=None):
         self._read_callback = callback
@@ -445,8 +428,9 @@ class BLEHandler():
 
     def lego_write(self, value, conn_handle=None, response=False):
         if not conn_handle: conn_handle = self._conn_handle
-        if self._lego_value_handle and conn_handle:
+        if self._lego_value_handle and conn_handle is not None:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
+            self.info("GATTC Written ", value)
 
     # Connect to the specified device (otherwise use cached address from a scan).
     def connect(self, addr_type, addr):
