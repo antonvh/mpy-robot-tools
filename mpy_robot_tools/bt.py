@@ -1,4 +1,3 @@
-from hub import Image
 import struct
 from utime import sleep_ms
 from micropython import const, schedule
