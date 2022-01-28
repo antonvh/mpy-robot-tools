@@ -7,10 +7,11 @@
 def Image(s):
     return(s)
 
-def display():
-    pass
+class Display():
+    def show(self, s, **kwargs):
+        return s
 
-display.show = lambda x: print(x)
+display = Display()
 
 class Motor():
     @staticmethod
