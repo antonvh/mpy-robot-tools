@@ -3,7 +3,7 @@
 ### Also serves as examples of code usage ###
 
 from mpy_robot_tools.motor_sync import AMHTimer, linear_interpolation, sine_wave
-from utime import sleep_ms
+from time import sleep
 
 def test_linear_interpolation():
     print("Now run some linear interpolation tests")
@@ -20,7 +20,7 @@ def test_timer():
     mytimer = AMHTimer()
     mytimer.rate = 500
     mytimer.reset()
-    sleep_ms(500)
+    sleep(0.5)
     mytimer.pause()
     # At 500 ticks per second, sleeping 500ms should give us about 250 ticks.
     assert 250 <= mytimer.time <= 252
@@ -29,7 +29,7 @@ def test_timer():
     mytimer.rate = -1000
     mytimer.reset()
     mytimer.resume() # Resetting resets time to 0, but doesn't change pause/resume
-    sleep_ms(500)
+    sleep(0.5)
     mytimer.pause()
     # Counting back from 0 for half a second at 1000 ticks should give us
     assert -505 <= mytimer.time <= -500
@@ -39,7 +39,7 @@ def test_timer():
     duration=2 #s
     mytimer.reset()
     mytimer.start()
-    sleep_ms(duration*1000)
+    sleep(duration)
     mytimer.pause()
     end_time = duration*100 + duration**2*200
     end_rate = 100 + duration*200
@@ -54,7 +54,7 @@ def test_timer():
     for i in range(5,0,-1):
         # Count down from five and wait a second in between to check timer.
         assert mytimer.time is i
-        sleep_ms(995)
+        sleep(0.995)
 
 
     

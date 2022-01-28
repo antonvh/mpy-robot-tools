@@ -2,7 +2,7 @@
 ### run tests using pytest
 ### Also serves as examples of code usage ###
 
-import hub
+import mpy_robot_tools.hub_stub as hub
 
 def test_hub():
     assert hub.Image("abc") == "abc"
