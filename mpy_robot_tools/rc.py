@@ -7,7 +7,7 @@ from machine import Timer
 try:
     from hub import display, Image
 except:
-    from hub_stub import display, Image
+    from .hub_stub import display, Image
 
 CONNECT_IMAGES= [
     Image('03579:00000:00000:00000:00000'),
@@ -51,7 +51,8 @@ class RCReceiver(UARTPeripheral):
     def _on_connect(self, *data):
         display.show(self.logo)
         # The delay is there to come after the char discovery phase.
-        t = Timer(
+        t = Timer(1)
+        t.init(
             mode=Timer.ONE_SHOT,
             period=2000,
             callback=lambda x:self.write(repr(self.logo))
