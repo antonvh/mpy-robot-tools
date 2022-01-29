@@ -9,3 +9,14 @@ def test_hub():
 
 def test_hub2():
     assert hub.display.show(hub.Image("abc")) == "abc"
+
+from neopixel import NeoPixel
+
+def test_np():
+    np = NeoPixel(21,24)
+    np.fill((1,2,3))
+    assert np.buf[-1] == 3
+    assert np.buf[-2] == 1
+    assert np.buf[-3] == 2
+    
+
