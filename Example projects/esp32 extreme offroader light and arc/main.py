@@ -13,9 +13,11 @@ rcv = RCReceiver(ble_handler=ble)
 
 ## Connect to a technic hub
 # Let the hub think that the ESP board is a train motor
-# by driving the Tx pin (ID2, lead 6) low
-tx = Pin(27, Pin.OUT, value=0) # was 19 or 18 on production board.
-# rx = Pin(26, Pin.OUT, Pin.PULL_UP, value=1) # optionally drive rx up.
+# If we don't it will refuse to give us 8V DC
+# We emulate a motor by driving the Tx pin low (ID2, lead 6, pin 18). 27 on test board
+tx = Pin(18, Pin.OUT, value=0) 
+# optionally drive rx up (ID1, lead 5, pin 19). 26 on test board
+# rx = Pin(19, Pin.OUT, Pin.PULL_UP, value=1) 
 
 # Now let the hub think that we're a bluetooth remote control
 from mpy_robot_tools.ctrl_plus import SmartHub
