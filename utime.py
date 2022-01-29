@@ -1,4 +1,4 @@
-# Stub for testing purposes
+# Stub for testing purposes and ESP32 compatibility
 
 import time
 

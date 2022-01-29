@@ -1,3 +1,6 @@
+# Stub for testing purposes and ESP32 compatibility
+# With this you can go:
+
 class NeoPixel():
     def __init__(self, pin, n_pixels) -> None:
         self.buf = bytearray(n_pixels*3)
