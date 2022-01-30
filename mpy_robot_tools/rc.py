@@ -51,7 +51,10 @@ class RCReceiver(UARTPeripheral):
     def _on_connect(self, *data):
         display.show(self.logo)
         # The delay is there to come after the char discovery phase.
-        t = Timer(1)
+        try:
+            t = Timer() # MINDSTORMS & Spike
+        except TypeError:
+            t = Timer(0) # ESP32
         t.init(
             mode=Timer.ONE_SHOT,
             period=2000,
