@@ -1,6 +1,7 @@
 
 import math
 from utime import sleep_ms, ticks_ms, ticks_diff
+from .helpers import PBMotor, clamp_int
 
 # TODO: Build this around the PBMotor class to simplify the code
 # from helpers import PBMotor
@@ -231,11 +232,10 @@ class Mechanism():
         while True:
             my_mechanism.update_motor_pwms(timer.time)
     """
-    def __init__(self, motors, motor_functions, reset_zero=True, ramp_pwm=100, Kp=1.2):
+    def __init__(self, motors, motor_functions, reset_zero=True, Kp=1.2):
         # Allow for both hub.port.X.motor and Motor('X') objects:
-        self.motors = [m._motor_wrapper.motor if '_motor_wrapper' in dir(m) else m for m in motors]
+        self.motors = [PBMotor(m) for m in motors]
         self.motor_functions = motor_functions
-        self.ramp_pwm = ramp_pwm
         self.Kp = Kp
         if reset_zero:
             self.relative_position_reset()
@@ -246,32 +246,13 @@ class Mechanism():
         # Set degrees counted of all motors according to absolute 0
         for motor, reset in zip(self.motors, motors_to_reset):
             if reset:
-                absolute_position = motor.get()[2]
-                if absolute_position > 180:
-                    absolute_position -= 360
-                motor.preset(absolute_position)
-
-    @staticmethod
-    def float_to_motorpower( f ):
-        # Convert any floating point to number to
-        # an integer between -100 and 100
-        return min(max(int(f),-100),100)
+                motor.reset_angle()
 
     def update_motor_pwms(self, ticks, *args, **kwargs):
         # Proportional controller toward disered motor positions at ticks
         for motor, motor_function in zip(self.motors, self.motor_functions):
             target_position = motor_function(ticks, *args, **kwargs)
-            current_position = motor.get()[1]
-            power = self.float_to_motorpower((target_position-current_position)* self.Kp)
-            if self.ramp_pwm < 100:
-                # Limit pwm for a smooth start
-                max_power = int(self.ramp_pwm*(abs(ticks)))
-                if power < 0:
-                    power = max(power, -max_power)
-                else:
-                    power = min( power, max_power)
-
-            motor.pwm( power )
+            motor.track_target(target_position, gain=self.Kp)
 
     def shortest_path_reset(self, ticks=0, speed=20, motors_to_reset=[]):
         # Get motors in position smoothly before starting the control loop
@@ -284,25 +265,26 @@ class Mechanism():
         # Run all motors to a ticks position with shortest path
         for motor, motor_function, reset in zip(self.motors, self.motor_functions, motors_to_reset):
             if reset:
-                target_position = int(motor_function(ticks))
-                current_position = motor.get()[1]
-                # Reset internal tacho so next move is shortest path
-                if target_position - current_position > 180:
-                    motor.preset(current_position + 360)
-                if target_position - current_position < -180:
-                    motor.preset(current_position - 360)
-                # Start the manouver
-                motor.run_to_position(target_position, speed)
+                target_position = motor_function(ticks)
+                current_position = motor.angle()
+                # Move internal tacho with a full turn so next move is shortest path
+                # This avoids the motor moving 350 degrees forward if it can move 10 degrees backward
+                # In legged robots this is the quietest reset.
+                if target_position - current_position > 185:
+                    motor.reset_angle(current_position + 360)
+                if target_position - current_position < -185:
+                    motor.reset_angle(current_position - 360)
+                motor.track_target(target_position)
 
         # Give the motors time to spin up
         sleep_ms(50)
         # Check all motors pwms until all maneuvers have ended
         while True:
-            pwms = []
+            done = []
             for motor in self.motors:
-                pwms += [motor.get()[3]]
-            if not any(pwms): break
+                done += [motor.control.done()]
+            if not any(done): break
         
     def stop(self):
         for motor in self.motors:
-            motor.pwm(0)
+            motor.stop()
