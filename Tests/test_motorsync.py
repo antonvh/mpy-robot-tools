@@ -2,7 +2,8 @@
 ### run tests using pytest
 ### Also serves as examples of code usage ###
 
-from mpy_robot_tools.motor_sync import AMHTimer, linear_interpolation, sine_wave
+from mpy_robot_tools.motor_sync import AMHTimer, linear_interpolation, sine_wave, Mechanism
+from mpy_robot_tools.helpers import PBMotor
 from time import sleep
 
 def test_linear_interpolation():
@@ -10,11 +11,41 @@ def test_linear_interpolation():
     points = [(-200, 100), (0, 100), (250, -100), (500, -100), (1000, 200)]
     li_function_1 = linear_interpolation(points, smoothing=1.0)
     li_function_2 = linear_interpolation(points, smoothing=0.5)
-    li_function_3 = linear_interpolation(points)
+    li_function_3 = linear_interpolation(points, accumulation=False, wrapping=False)
     sine_function = sine_wave()
-    for i in range(-1100, 2400, 10):
-        print("{0}\t{1:.2f}\t{2:.2f}\t{3:.2f}".format(i, li_function_1(i), li_function_2(i), li_function_3(i)))
 
+    assert sine_function(0) == 0
+    assert li_function_1(-700) == -200 # Wrapping and accumulation
+    assert li_function_3(-200) == 100
+
+    li1_out = [li_function_1(i) for i in range(-1100, 2400, 10)]
+    li2_out = [li_function_2(i) for i in range(-1100, 2400, 10)]
+    li3_out = [li_function_3(i) for i in range(-1100, 2400, 10)]
+    sine_out = [sine_function(i) for i in range(-1100, 2400, 10)]
+
+    assert min(sine_out) == -100
+    assert max(sine_out) == 100
+    assert min(li3_out) == -100
+    assert max(li3_out) == 200
+
+def test_mechanism():
+    s1 = PBMotor('stub1')
+    s2 = PBMotor('stub2')
+    motors = [s1, s2]
+    funcs = [sine_wave(amplitude=90), sine_wave(amplitude=-90)]
+    m = Mechanism(motors, funcs)
+    m.update_motor_pwms(1000)
+    assert s1.angle() == 0
+    assert s2.angle() == 0
+
+    m.update_motor_pwms(500)
+    assert s1.angle() == 0
+    assert s2.angle() == 0
+
+    m.update_motor_pwms(250)
+    assert s1.angle() == 90
+    assert s2.angle() == -90
+    
 def test_timer():
     print("Run some timer tests and examples")
     mytimer = AMHTimer()

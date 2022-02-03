@@ -63,13 +63,6 @@ class PBMotor():
     def angle(self):
         return self.control.angle()
 
-    def servo_pwm(self):
-        return clamp_int(scale(
-            self.control.angle(), 
-            (-90, 90),
-            (40, 115)
-            ), 40, 115)
-
     def reset_angle(self, *args):
         # Pass 0 to set current position to zero
         # Without arguments this resets to the absolute encoder position
@@ -135,8 +128,8 @@ class MotorStub():
         else:
             self.__angle = 0
 
-    def track_target(self, t):
-        self.__angle = t
+    def track_target(self, t, **kwargs):
+        self.__angle = round(t)
 
     def done(self):
         return True

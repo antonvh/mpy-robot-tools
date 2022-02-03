@@ -234,7 +234,7 @@ class Mechanism():
     """
     def __init__(self, motors, motor_functions, reset_zero=True, Kp=1.2):
         # Allow for both hub.port.X.motor and Motor('X') objects:
-        self.motors = [PBMotor(m) for m in motors]
+        self.motors = [m if type(m)==PBMotor else PBMotor(m) for m in motors]
         self.motor_functions = motor_functions
         self.Kp = Kp
         if reset_zero:
