@@ -1,4 +1,5 @@
 from machine import Timer
+from micropython import const
 try:
     from hub import port
 except:
@@ -26,8 +27,9 @@ def scale(val, src, dst):
     """
     return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
-__MSHUB = 0
-__PYBRICKS = 1
+__MSHUB = const(0)
+__PYBRICKS = const(1)
+__STUB = const(3)
 
 class PBMotor():
     """
