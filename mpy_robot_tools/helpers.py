@@ -1,4 +1,4 @@
-# from machine import Timer
+from machine import Timer
 try:
     from hub import port
 except:
@@ -53,8 +53,9 @@ class PBMotor():
             self.motor = eval("port."+motor+".motor")
         else:
             print("Unknown motor type")
-            # We should probably rais an IOerror here
+            # We should probably raise an IOerror here
         self.reset_angle()
+        self.timer = Timer()
 
     def dc(self, duty):
         if self.type == __MSHUB:
@@ -87,12 +88,12 @@ class PBMotor():
 
     def track_target(self, target, gain=1.5):
         if self.type == __MSHUB:
+            # If track target isn't called again within 500ms, fall back to run_to_position
+            self.timer.init(
+                mode=Timer.ONE_SHOT, 
+                period=500, 
+                callback=lambda x: self.motor.run_to_position(target))
             track_target(self.motor, target, gain)
-            # TODO: find a way to fire a run_to_position if track target isn't called again soon enough
-            # self.t = Timer(
-            #     mode=Timer.ONE_SHOT, 
-            #     period=500, 
-            #     callback=lambda x: self.motor.run_to_position(target))
             
         elif self.type == __PYBRICKS:
             self.motor.track_target(target)
