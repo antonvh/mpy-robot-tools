@@ -4,3 +4,6 @@
 [submodule "Submodules/UartRemote"]
 	path = Submodules/UartRemote
 	url = https://github.com/antonvh/UartRemote
+[submodule "Submodules/SerialTalk"]
+	path = Submodules/SerialTalk
+	url = https://github.com/antonvh/SerialTalk
