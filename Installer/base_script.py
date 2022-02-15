@@ -1,14 +1,16 @@
-import ubinascii, os, machine,uhashlib
-from ubinascii import hexlify
+from ubinascii import hexlify, a2b_base64
+from uhashlib import sha256
+from os import mkdir
+
 
 encoded={}
 
 def calc_hash(b):
-    return hexlify(uhashlib.sha256(b).digest()).decode()
+    return hexlify(sha256(b).digest()).decode()
 
 error=False
 try:
-    os.mkdir('/projects/mpy_robot_tools')
+    mkdir('/projects/mpy_robot_tools')
 except:
     pass
 
@@ -20,7 +22,7 @@ for file, code, hash_gen in encoded:
     print('writing '+file+' to folder /projects/mpy_robot_tools')
     with open(target_loc,'wb') as f:
         for chunk in code:
-            f.write(ubinascii.a2b_base64(chunk))
+            f.write(a2b_base64(chunk))
     del code
 
     try:
@@ -38,7 +40,6 @@ for file, code, hash_gen in encoded:
 
 
 if not error:
-    print('Library written succesfully. Resetting....')
-    machine.reset()
+    print('Library written succesfully. Reset your hub.')
 else:
     print('Failure in writing library!')

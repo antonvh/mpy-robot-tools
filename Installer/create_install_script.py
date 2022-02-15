@@ -13,8 +13,10 @@ LIB = '../mpy_robot_tools/'
 MPY_LIB = 'mpy/'
 INSTALLER = 'install_mpy_robot_tools.py'
 BASE_SCRIPT = 'base_script.py'
+SKIP_FILES = ['__pycache__', 'servo.py', 'hub_stub.py', 'np_animation.py']
+CHUNK_SIZE = 2**8
 
-files = [f for f in os.listdir(LIB) if f not in ['__pycache__']]
+files = [f for f in os.listdir(LIB) if f not in SKIP_FILES]
 encoded = []
 
 for f in files:
@@ -26,9 +28,9 @@ for f in files:
         file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
     chunks = []
     with open(out_file_loc,'rb') as mpy_file:
-        for chunk in iter(partial(mpy_file.read, 2**10), b''):
+        for chunk in iter(partial(mpy_file.read, CHUNK_SIZE), b''):
             chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
-    print(out_file,": ",len(chunks)," chunks of ",2**10)
+    print(out_file,": ",len(chunks)," chunks of ", CHUNK_SIZE)
     encoded += [(
         out_file,
         tuple(chunks), 
