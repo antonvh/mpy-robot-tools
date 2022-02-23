@@ -82,6 +82,7 @@ class MSHubControl():
     """
     def __init__(self, motor) -> None:
         self.motor = motor
+        self.motor.mode([(1, 0), (2, 0), (3, 0), (0, 0)])
         self.timer = Timer()
 
     def dc(self, duty):

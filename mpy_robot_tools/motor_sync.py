@@ -1,10 +1,7 @@
 
 import math
 from utime import sleep_ms, ticks_ms, ticks_diff
-from .helpers import PBMotor, clamp_int
-
-# TODO: Build this around the PBMotor class to simplify the code
-# from helpers import PBMotor
+from .helpers import PBMotor
 
 ### These meta-functions return functions for use inside the mechanism class ###
 def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0, smoothing=0.0):
@@ -52,9 +49,18 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     smoothing = min(max(0.0, smoothing),1.0)
 
     # Build our return function
-    def function(x):
+    def function(x, **kwargs):
+        if "scale" in kwargs:
+            scale = kwargs["scale"]
+        else:
+            scale = 1
+        if "time_offset" in kwargs:
+            offset = kwargs[time_offset]
+        else:
+            offset = time_offset
+
         # Correct input for the zero-rebased point list
-        x -= x_min + time_offset
+        x -= x_min + offset
 
         if not wrapping:
             # Extend the extremes to infinity and return
@@ -84,7 +90,7 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
                     # Avoid unnecessary cosine calculations
                     smooth_progress = 0
                 interpolated_y = y1 + smoothing*smooth_progress*gap + (1-smoothing)*progress*gap
-                return x_periods*accumulation_per_period + interpolated_y
+                return x_periods*accumulation_per_period + interpolated_y * scale
     return function
 
 def linear(factor, time_delay = 0, offset = 0):
@@ -92,17 +98,18 @@ def linear(factor, time_delay = 0, offset = 0):
     Returns a function that is a linear proportion to an input.
     """
     y0 = - time_delay * factor + offset
-    def function(x):
+    # Accept kwargs so that mechanisms can pass them to all functions
+    def function(x, **kwargs):
         return x * factor + y0
     return function
 
 def sine_wave(amplitude=100, period=1000, offset=0):
-    def function(x):
+    def function(x, **kwargs):
         return math.sin((x-offset)/period*2*math.pi) * amplitude
     return function
 
 def block_wave(amplitude=100, period=1000, offset=0):
-    def function(ticks):
+    def function(ticks, **kwargs):
         phase = ticks % period
         if offset < phase < offset + period//2:
             return amplitude
@@ -248,10 +255,10 @@ class Mechanism():
             if reset:
                 motor.reset_angle()
 
-    def update_motor_pwms(self, ticks, *args, **kwargs):
+    def update_motor_pwms(self, ticks, **kwargs):
         # Proportional controller toward disered motor positions at ticks
         for motor, motor_function in zip(self.motors, self.motor_functions):
-            target_position = motor_function(ticks, *args, **kwargs)
+            target_position = motor_function(ticks, **kwargs)
             motor.track_target(target_position, gain=self.Kp)
 
     def shortest_path_reset(self, ticks=0, speed=20, motors_to_reset=[]):
