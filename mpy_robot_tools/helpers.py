@@ -72,7 +72,7 @@ class PBMotor():
         self.control.track_target(*args, **kwargs)
 
     def stop(self):
-        self.control.dc(0)
+        self.dc(0)
 
 class MSHubControl():
     """
@@ -116,9 +116,10 @@ class MSHubControl():
 
 class MotorStub():
     __angle = 0
+    __dc = 0
 
     def dc(self, n):
-        self.dc = n
+        self.__dc = n
 
     def angle(self):
         return self.__angle
@@ -132,5 +133,10 @@ class MotorStub():
     def track_target(self, t, **kwargs):
         self.__angle = round(t)
 
-    def done(self):
+    @staticmethod
+    def done():
         return True
+    
+    @staticmethod
+    def stop():
+        pass
