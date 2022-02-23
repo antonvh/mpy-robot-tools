@@ -72,7 +72,7 @@ class PBMotor():
         self.control.track_target(*args, **kwargs)
 
     def stop(self):
-        self.dc(0)
+        self.control.dc(0)
 
 class MSHubControl():
     """
