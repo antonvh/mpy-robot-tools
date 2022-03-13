@@ -4,6 +4,10 @@ from projects.mpy_robot_tools.rc import (
     L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER,
     L_TRIGGER, R_TRIGGER, SETTING1, SETTING2, BUTTONS
 )
+# uartremote is deprepecated. Use SerialTalk.
+# from projects.mpy_robot_tools.uartremote import *
+from projects.mpy_robot_tools.serialtalk import SerialTalk
+from projects.mpy_robot_tools.mshub import MSHubSerial
 from projects.mpy_robot_tools.ctrl_plus import SmartHub
 from mpy_robot_tools.light import codelines, LMAnimation
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer, sine_wave, linear_interpolation, linear, block_wave

@@ -1,19 +1,23 @@
 # Install mpy-robot-tools
 # Then paste this script into an empty Python LEGO MINDSTORMS Project in the LEGO App.
+# Building instructions here:
+# https://www.patreon.com/posts/62344422
 
+# Connect to it using a steering wheel or app:
+# https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc&hl=nl&gl=US
 
-from projects.mpy_robot_tools.uartremote import *
+from projects.mpy_robot_tools.serialtalk import SerialTalk
+from projects.mpy_robot_tools.mshub import MSHubSerial
 from projects.mpy_robot_tools.motor_sync import linear_interpolation, Mechanism, AMHTimer
 from projects.mpy_robot_tools.helpers import PBMotor
 from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, L_STICK_VER, R_STICK_HOR
-from hub import port
 from mindstorms import DistanceSensor
 
 head = DistanceSensor('C')
 head.light_up_all()
 
-ur=UartRemote('D')
-port.D.pwm(100)
+# Open connection to ESP32 and add 100% power (8V) to it.
+ur = SerialTalk( MSHubSerial('D', power=100), timeout=20)
 
 FRS=23 # Front Right Servo
 FLS=25 # Front Left Servo
@@ -74,7 +78,6 @@ right_lower_legs = Mechanism(
 )
 
 timer = AMHTimer()
-# right_timer = AMHTimer()
 rcv = RCReceiver()
 
 while 1:
@@ -102,7 +105,7 @@ while 1:
         right_servos.update_motor_pwms(right_ticks, scale=r_scale)
         left_lower_legs.update_motor_pwms(left_ticks)
         right_lower_legs.update_motor_pwms(right_ticks)
-        ur.call('set_angles', 'repr', {FRS:frs.angle(), FLS:fls.angle(), BRS:brs.angle(), BLS:bls.angle()})
+        ur.call('servos', '4i', brs.angle(), bls.angle(), frs.angle(), fls.angle())
     else:
         left_servos.stop()
         right_servos.stop()

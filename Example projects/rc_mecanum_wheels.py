@@ -6,11 +6,10 @@
 # Connect to it using a steering wheel or app:
 # https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc&hl=nl&gl=US
 
+from time import sleep_ms
 from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, R_STICK_HOR
 from projects.mpy_robot_tools.helpers import clamp_int
-from mindstorms import ColorSensor, Motor, DistanceSensor
-from mindstorms.control import wait_for_seconds
-import math
+from mindstorms import ColorSensor, Motor
 
 ls = ColorSensor('C')
 rcv = RCReceiver(name="roto")
@@ -32,10 +31,10 @@ while 1:
         if rcv.button_pressed(8):
             break
         ls.light_up_all(light)
-        flw.start_at_power(clamp_int(-speed - turn - strafe))
-        frw.start_at_power(clamp_int( speed - turn - strafe))
-        blw.start_at_power(clamp_int(-speed + turn - strafe))
-        brw.start_at_power(clamp_int( speed + turn - strafe))
+        flw.start(clamp_int(-speed - turn - strafe))
+        frw.start(clamp_int( speed - turn - strafe))
+        blw.start(clamp_int(-speed + turn - strafe))
+        brw.start(clamp_int( speed + turn - strafe))
 
     else:
         flw.start_at_power(0)
@@ -43,4 +42,4 @@ while 1:
         blw.start_at_power(0)
         brw.start_at_power(0)
         print("Waiting for connection...")
-        wait_for_seconds(0.3)
+        sleep_ms(300)

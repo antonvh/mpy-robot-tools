@@ -5,6 +5,7 @@
 # and connects to the next two segments
 # Building instructions for the snake:
 # https://antonsmindstorms.com/product/robot-snake-with-multiple-51515-inventor-sets/
+
 # Connect to it using a steering wheel or app:
 # https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc&hl=nl&gl=US
 
