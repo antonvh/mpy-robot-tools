@@ -11,7 +11,7 @@ from projects.mpy_robot_tools.mshub import MSHubSerial
 from projects.mpy_robot_tools.ctrl_plus import SmartHub
 from mpy_robot_tools.light import codelines, LMAnimation
 from projects.mpy_robot_tools.motor_sync import Mechanism, AMHTimer, sine_wave, linear_interpolation, linear, block_wave
-from projects.mpy_robot_tools.helpers import clamp_int, track_target, scale, PBMotor
+from projects.mpy_robot_tools.helpers import clamp_int, track_target, scale, PBMotor, PBUltrasonicSensor
 from projects.mpy_robot_tools.pyhuskylens import (
     HuskyLens,
     ALGORITHM_FACE_RECOGNITION,

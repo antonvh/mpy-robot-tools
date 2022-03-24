@@ -1,3 +1,10 @@
+# Paste this script in an empty Python project
+# Run once to install
+# Warning: it can take a while to download and start. Be patient.
+# Watch console output to check progress.
+# After reboot DO NOT LET THE SOFTWARE UPDATE YOUR HUB
+# Works with the LEGO SPIKE app and the LEGO MINDSTORMS app
+
 from ubinascii import hexlify, a2b_base64
 from uhashlib import sha256
 from os import mkdir
