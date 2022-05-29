@@ -27,7 +27,7 @@ if 'FLAG_INDICATE' in dir(ubluetooth):
     _IRQ_GATTC_WRITE_DONE = 17
 else:
     # We're probably on SPIKE Prime
-    _IRQ_GATTS_WRITE = 1<<2
+    _IRQ_GATTS_WRITE = 1 << 2
     _IRQ_SCAN_RESULT = 1 << 4
     _IRQ_SCAN_DONE = 1 << 5
     _IRQ_PERIPHERAL_CONNECT = 1 << 6
@@ -178,7 +178,7 @@ class BLEHandler():
         self.connecting_uart = False
         self.connecting_lego = False
         self._read_data = []
-        self._reading=False
+        self._reading = False
         self._start_handle = None
         self._end_handle = None
 
@@ -189,9 +189,9 @@ class BLEHandler():
     def _irq(self, event, data):
         if event == _IRQ_SCAN_RESULT:
             addr_type, addr, adv_type, rssi, adv_data = data
-            name=_decode_name(adv_data) or "?"
-            services=_decode_services(adv_data)
-            self.info("Found: ",name , "with services:", services)
+            name = _decode_name(adv_data) or "?"
+            services = _decode_services(adv_data)
+            self.info("Found: ", name, "with services:", services)
             if self.connecting_uart:
                 # Move this back to base class
                 if name == self._search_name and _UART_UUID in services: #Allow for nameless scanning too? Search by services?
@@ -291,7 +291,7 @@ class BLEHandler():
             notify_data=bytes(notify_data)
             if conn_handle in self._notify_callbacks:
                 if self._notify_callbacks[conn_handle]:
-                    schedule(self._notify_callbacks[conn_handle],notify_data)
+                    schedule(self._notify_callbacks[conn_handle], notify_data)
 
         elif event == _IRQ_GATTC_READ_RESULT:
             # A read completed successfully.
@@ -411,26 +411,26 @@ class BLEHandler():
         try:
             self._ble.gattc_read(conn_handle, val_handle)
         except Exception as e:
-            print("gattc_read failed",e)
+            print("gattc_read failed", e)
 
     def uart_read(self, conn_handle=None):
         if not conn_handle: conn_handle = self._conn_handle
         self._reading = conn_handle
         self.read(conn_handle, self._tx_handle)
-        n=0
+        n = 0
         for i in range(100):
             if not self._reading:
                 n = i
                 break
             sleep_ms(4)
-        print("n:",n)
+        print("n:", n)
         return self._read_data
 
     def lego_read(self, conn_handle=None):
         if not conn_handle: conn_handle = self._conn_handle
         self._reading = conn_handle
         self.read(conn_handle, self._lego_value_handle)
-        n=0
+        n = 0
         for i in range(100):
             if not self._reading:
                 n = i
@@ -459,7 +459,7 @@ class BLEHandler():
 
 
 class BleUARTBase():
-    def __init__(self, ble_handler:BLEHandler=None, buffered=False):
+    def __init__(self, ble_handler: BLEHandler = None, buffered = False):
         self.buffered = buffered
         self.buffer = bytearray()
         if ble_handler is None:
