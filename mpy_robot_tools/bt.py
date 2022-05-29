@@ -153,7 +153,7 @@ def _decode_services(payload):
     return services
 
 
-class BLEHandler():
+class BLEHandler:
     # Basic BT class that can be a central or peripheral or both
     # The central always connects to a peripheral. The Peripheral just advertises.
     def __init__(self, debug=False):
@@ -459,7 +459,7 @@ class BLEHandler():
             self._notify_callbacks[conn_handle] = callback
 
 
-class BleUARTBase():
+class BleUARTBase:
     def __init__(self, ble_handler: BLEHandler = None, buffered=False):
         self.buffered = buffered
         self.buffer = bytearray()
