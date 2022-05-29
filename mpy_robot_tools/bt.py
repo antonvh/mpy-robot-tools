@@ -283,8 +283,8 @@ class BLEHandler:
                 self._char_result_callback(conn_handle, value_handle, uuid)
 
         elif event == _IRQ_GATTC_WRITE_DONE:
-           conn_handle, value_handle, status = data
-           self.info("TX complete on", conn_handle)
+            conn_handle, value_handle, status = data
+            self.info("TX complete on", conn_handle)
 
         elif event == _IRQ_GATTC_NOTIFY:
             # print("_IRQ_GATTC_NOTIFY")
