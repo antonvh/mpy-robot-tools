@@ -236,7 +236,7 @@ class BLEHandler():
             # Connect to peripheral successful.
             conn_handle, addr_type, addr = data
             if self.connecting_uart or self.connecting_lego:
-                self._conn_handle=conn_handle
+                self._conn_handle = conn_handle
             self._ble.gattc_discover_services(conn_handle)
 
         elif event == _IRQ_PERIPHERAL_DISCONNECT:
