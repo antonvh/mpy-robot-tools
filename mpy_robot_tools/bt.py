@@ -287,7 +287,7 @@ class BLEHandler:
             self.info("TX complete on", conn_handle)
 
         elif event == _IRQ_GATTC_NOTIFY:
-            # print("_IRQ_GATTC_NOTIFY")
+            # print("_IRQ_GATTC_NOTIFY") # TODO: Remove
             conn_handle, value_handle, notify_data = data
             notify_data = bytes(notify_data)
             if conn_handle in self._notify_callbacks:
@@ -296,7 +296,7 @@ class BLEHandler:
 
         elif event == _IRQ_GATTC_READ_RESULT:
             # A read completed successfully.
-            # print("_IRQ_GATTC_READ_RESULT")
+            # print("_IRQ_GATTC_READ_RESULT") # TODO: Remove
             conn_handle, value_handle, char_data = data
             self._read_data = bytes(char_data)
             if self._reading == conn_handle: self._reading = False
@@ -431,13 +431,13 @@ class BLEHandler:
         if not conn_handle: conn_handle = self._conn_handle
         self._reading = conn_handle
         self.read(conn_handle, self._lego_value_handle)
-        n = 0
+        n = 0  # TODO Remove 'n', its value is not used
         for i in range(100):
             if not self._reading:
                 n = i
                 break
             sleep_ms(4)
-        # print("n:",n)
+        # print("n:",n) # TODO Remove
         return self._read_data
 
     def lego_write(self, value, conn_handle=None, response=False):
@@ -468,7 +468,7 @@ class BleUARTBase:
         self.ble_handler = ble_handler
 
     def _on_rx(self, data):
-        # print("RX!", data)
+        # print("RX!", data)   # TODO: Remove
         if self.buffered:
             self.buffer += data
         else:
