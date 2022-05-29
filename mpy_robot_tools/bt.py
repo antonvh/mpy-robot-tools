@@ -94,6 +94,7 @@ def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=N
 
     Returns:
         An array of bytes with the specified payload.
+
     """
     payload = bytearray()
 
@@ -128,6 +129,16 @@ def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=N
 
 
 def _decode_field(payload, adv_type):
+    """Decode particular fields from the payload.
+
+    Args:
+        payload (bytearray): Payload of the message.
+        adv_type (?): Type of the field to decode.
+
+    Returns:
+        An array with the decoded fields.
+
+    """
     i = 0
     result = []
     while i + 1 < len(payload):
@@ -138,11 +149,29 @@ def _decode_field(payload, adv_type):
 
 
 def _decode_name(payload):
+    """Decode payload name .
+
+        Args:
+            payload (bytearray): Payload of the message.
+
+        Returns:
+            A string with the name or the payload or the empty string.
+
+    """
     n = _decode_field(payload, _ADV_TYPE_NAME)
     return str(n[0], "utf-8") if n else ""
 
 
 def _decode_services(payload):
+    """Decode service ids.
+
+            Args:
+                payload (bytearray): Payload of the message.
+
+            Returns:
+                An array with the `ids` of the available services.
+
+        """
     services = []
     for u in _decode_field(payload, _ADV_TYPE_UUID16_COMPLETE):
         services.append(ubluetooth.UUID(struct.unpack("<h", u)[0]))
@@ -154,8 +183,11 @@ def _decode_services(payload):
 
 
 class BLEHandler:
-    # Basic BT class that can be a central or peripheral or both
-    # The central always connects to a peripheral. The Peripheral just advertises.
+    """Basic BT class that can be a central or peripheral or both.
+
+    The central always connects to a peripheral. The Peripheral just advertises.
+
+    """
     def __init__(self, debug=False):
         self._ble = ubluetooth.BLE()
         self._ble.active(True)
@@ -195,7 +227,8 @@ class BLEHandler:
             self.info("Found: ", name, "with services:", services)
             if self.connecting_uart:
                 # Move this back to base class
-                if name == self._search_name and _UART_UUID in services:  # Allow for nameless scanning too? Search by services?
+                # Allow for nameless scanning too? Search by services?
+                if name == self._search_name and _UART_UUID in services:
                     # Found a potential device, remember it
                     self._addr_type = addr_type
                     self._addr = bytes(addr)  # Note: addr buffer is owned by caller so need to copy it.
@@ -460,6 +493,9 @@ class BLEHandler:
 
 
 class BleUARTBase:
+    """Base class for ....
+
+    """
     def __init__(self, ble_handler: BLEHandler = None, buffered=False):
         self.buffered = buffered
         self.buffer = bytearray()
@@ -491,6 +527,10 @@ class BleUARTBase:
 
 
 class UARTPeripheral(BleUARTBase):
+    """Class for ....
+
+    """
+
     def __init__(self, name="robot", **kwargs):
         super().__init__(**kwargs)
         self.name = name
@@ -529,10 +569,14 @@ class UARTPeripheral(BleUARTBase):
 
 
 class UARTCentral(BleUARTBase):
-    # Class to connect to single BLE Peripheral
-    # Instantiate more 'centrals' with the same ble handler to connect to
-    # multiple peripherals. Things will probably break if you instantiate
-    # multiple ble handlers. (EALREADY)
+    """Class to connect to single BLE Peripheral.
+
+    Instantiate more 'centrals' with the same ble handler to connect to
+    multiple peripherals. Things will probably break if you instantiate
+    multiple ble handlers. (EALREADY)
+
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._tx_handle = 9  # None
