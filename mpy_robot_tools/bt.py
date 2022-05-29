@@ -152,6 +152,7 @@ def _decode_services(payload):
         services.append(ubluetooth.UUID(u))
     return services
 
+
 class BLEHandler():
     # Basic BT class that can be a central or peripheral or both
     # The central always connects to a peripheral. The Peripheral just advertises.
@@ -168,8 +169,8 @@ class BLEHandler():
         self._scan_done_callback = None
         self._conn_callback = None
         self._disconn_callbacks = {}
-        self._central_conn_callback = None # Used when centrals connect
-        self._central_disconn_callback = None # Used when centrals disconnect
+        self._central_conn_callback = None  # Used when centrals connect
+        self._central_disconn_callback = None  # Used when centrals disconnect
         self._char_result_callback = None
         self._read_callback = None
         self._write_callbacks = {}
@@ -194,10 +195,10 @@ class BLEHandler():
             self.info("Found: ", name, "with services:", services)
             if self.connecting_uart:
                 # Move this back to base class
-                if name == self._search_name and _UART_UUID in services: #Allow for nameless scanning too? Search by services?
+                if name == self._search_name and _UART_UUID in services:  # Allow for nameless scanning too? Search by services?
                     # Found a potential device, remember it
                     self._addr_type = addr_type
-                    self._addr = bytes(addr) # Note: addr buffer is owned by caller so need to copy it.
+                    self._addr = bytes(addr)  # Note: addr buffer is owned by caller so need to copy it.
                     # ... and stop scanning. This triggers the IRQ_SCAN_DONE and the on_scan callback.
                     self.stop_scan()
             if self.connecting_lego:
@@ -245,7 +246,7 @@ class BLEHandler():
             if conn_handle in self._disconn_callbacks:
                 if self._disconn_callbacks[conn_handle]:
                     self._disconn_callbacks[conn_handle]()
-                    #TODO Also delete any notify callbacks
+                    # TODO Also delete any notify callbacks
 
         elif event == _IRQ_GATTC_SERVICE_RESULT:
             # Connected device returned a service.
@@ -277,7 +278,7 @@ class BLEHandler():
             elif self.connecting_lego:
                 if uuid == _LEGO_SERVICE_CHAR:
                     self._lego_value_handle = value_handle
-                    self.connecting_lego = False # We're done
+                    self.connecting_lego = False  # We're done
             if self._char_result_callback:
                 self._char_result_callback(conn_handle, value_handle, uuid)
 
@@ -288,14 +289,14 @@ class BLEHandler():
         elif event == _IRQ_GATTC_NOTIFY:
             # print("_IRQ_GATTC_NOTIFY")
             conn_handle, value_handle, notify_data = data
-            notify_data=bytes(notify_data)
+            notify_data = bytes(notify_data)
             if conn_handle in self._notify_callbacks:
                 if self._notify_callbacks[conn_handle]:
                     schedule(self._notify_callbacks[conn_handle], notify_data)
 
         elif event == _IRQ_GATTC_READ_RESULT:
             # A read completed successfully.
-            #print("_IRQ_GATTC_READ_RESULT")
+            # print("_IRQ_GATTC_READ_RESULT")
             conn_handle, value_handle, char_data = data
             self._read_data = bytes(char_data)
             if self._reading == conn_handle: self._reading = False
@@ -312,7 +313,7 @@ class BLEHandler():
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, addr_type, addr = data
             print("Disconnected", conn_handle)
-            if conn_handle in  self._connected_centrals:
+            if conn_handle in self._connected_centrals:
                 self._connected_centrals.remove(conn_handle)
             if self._central_disconn_callback:
                 self._central_disconn_callback(conn_handle)
@@ -363,7 +364,7 @@ class BLEHandler():
     def stop_scan(self):
         self._ble.gap_scan(None)
 
-    def connect_uart(self, name="robot", on_disconnect = None, on_notify = None, time_out=10):
+    def connect_uart(self, name="robot", on_disconnect=None, on_notify=None, time_out=10):
         self._search_name = name
         # self.timed_out = False
         self.connecting_uart = True
@@ -459,7 +460,7 @@ class BLEHandler():
 
 
 class BleUARTBase():
-    def __init__(self, ble_handler: BLEHandler = None, buffered = False):
+    def __init__(self, ble_handler: BLEHandler = None, buffered=False):
         self.buffered = buffered
         self.buffer = bytearray()
         if ble_handler is None:
@@ -526,6 +527,7 @@ class UARTPeripheral(BleUARTBase):
                 # self.ble_handler.notify(repr(data), self._handle_tx)
                 print(e)
 
+
 class UARTCentral(BleUARTBase):
     # Class to connect to single BLE Peripheral
     # Instantiate more 'centrals' with the same ble handler to connect to
@@ -533,8 +535,8 @@ class UARTCentral(BleUARTBase):
     # multiple ble handlers. (EALREADY)
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._tx_handle = 9 # None
-        self._rx_handle = 12 # None
+        self._tx_handle = 9  # None
+        self._rx_handle = 12  # None
         self._on_disconnect()
 
     def __del__(self):
@@ -551,8 +553,8 @@ class UARTCentral(BleUARTBase):
         self._periph_name = name
         self._conn_handle, self._rx_handle, self._tx_handle = self.ble_handler.connect_uart(
             name,
-            on_disconnect = self._on_disconnect,
-            on_notify = self._on_rx
+            on_disconnect=self._on_disconnect,
+            on_notify=self._on_rx
             )
         return self.is_connected()
 
