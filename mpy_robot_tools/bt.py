@@ -83,9 +83,22 @@ _UART_SERVICE = (
 
 # Generate a payload to be passed to gap_advertise(adv_data=...).
 def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
+    """Generate advertising payload.
+
+    Args:
+        limited_disc (bool): Limited .... . Default value: ``False``.
+        br_edr (bool): B..... . Default value: ``False`.
+        name (str): Name ..... . Default value: ``None`.
+        services (list): List of services ...  Default value: ``None`.
+        appearance (int): .... . Default value: ``False``.
+
+    Returns:
+        An array of bytes with the specified payload.
+    """
     payload = bytearray()
 
     def _append(adv_type, value):
+        """Auxiliary function to populate the payload array"""
         nonlocal payload
         payload += struct.pack("BB", len(value) + 1, adv_type) + value
 
