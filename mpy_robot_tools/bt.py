@@ -9,6 +9,7 @@ _IRQ_CENTRAL_DISCONNECT = const(2)
 _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
 
+# Initialize constants based on the running device
 if 'FLAG_INDICATE' in dir(ubluetooth):
     # We're on MINDSTORMS Robot Inventor or ESP32
     # New version of bluetooth
