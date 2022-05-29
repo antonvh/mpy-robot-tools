@@ -132,7 +132,7 @@ def _decode_field(payload, adv_type):
     result = []
     while i + 1 < len(payload):
         if payload[i + 1] == adv_type:
-            result.append(payload[i + 2 : i + payload[i] + 1])
+            result.append(payload[i + 2: i + payload[i] + 1])
         i += 1 + payload[i]
     return result
 
