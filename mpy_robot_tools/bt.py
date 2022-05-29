@@ -46,9 +46,9 @@ _FLAG_NOTIFY = const(0x0010)
 
 # Helpers for generating BLE advertising payloads.
 # Advertising payloads are repeated packets of the following form:
-#1 byte data length (N + 1)
-#1 byte type (see constants below)
-#N bytes type-specific data
+# 1 byte data length (N + 1)
+# 1 byte type (see constants below)
+# N bytes type-specific data
 
 _ADV_TYPE_FLAGS = const(0x01)
 _ADV_TYPE_NAME = const(0x09)
