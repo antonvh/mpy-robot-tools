@@ -7,7 +7,7 @@ This is a collection of classes and methods that help you to animate robots. The
 2. Then run it once, it will take additional time to transfer to the Hub please use patience.
 3. UNPLUG The hub before it completes the restart after the script!! Watch the console output for action to unplug.
 
-Caution if the Spike/Mindstorm app asks for a firmewae update and you accept you will need to re-install. You can just disconect and ignore the update the Hub will be in a "big square" for waiting for update just long press the center button and power cycle the hub to reconect to the lego app, it wont ask a second time to update in the instance.
+Caution if the Spike/Mindstorm app asks for a firmware update, and you accept you will need to re-install. You can just disconnect and ignore the update the Hub will be in a "big square" for waiting for update just long press the center button and power cycle the hub to reconect to the lego app, it won't ask a second time to update in the instance.
 
 ### Uninstall ###
 
