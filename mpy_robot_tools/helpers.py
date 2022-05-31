@@ -34,22 +34,26 @@ def scale(val, src, dst):
 
 
 class PBUltrasonicSensor:
-    # LEGO® SPIKE Color Sensor.
+    """Robot's ultrasonic sensor wrapper."""
 
-    # Parameters
-    # port (Port) – Port to which the sensor is connected.
     def __init__(self, sensor_port):
+        """
+
+        Args:
+            sensor_port (?): Port to which the sensor is connected
+
+        """
         self.sensor = eval("port." + sensor_port + ".device")
         self.lights = USLights(self.sensor)
 
     def distance(self):
-        # Measures the distance between the sensor and an object using ultrasonic sound waves.
+        """Measures the distance between the sensor and an object using ultrasonic sound waves.
 
-        # Returns
-        # Measured distance. If no valid distance was measured, it returns 2000 mm.
+        Return:
+            Measured distance. If no valid distance was measured, it returns 2000 mm.
 
-        # Return type
-        # distance: mm
+        """
+
         dist = self.sensor.get()[0]
         if dist == None:
             return 2000
