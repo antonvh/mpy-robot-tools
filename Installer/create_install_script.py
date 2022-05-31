@@ -1,7 +1,7 @@
 #!python3
 
-# Run this on a Mac or Linux machine to create/update 'install_uartremote.py'
-# Copy the contents of install_uartremote.py into an empty SPIKE Prime project
+# Run this on a Mac or Linux machine to create/update 'install_mpy_robot_tools.py'
+# Copy the contents of install_mpy_robot_tools.py into an empty SPIKE Prime/LEGO MINDSTORMS project
 # And run to install
 
 import binascii, mpy_cross, time
