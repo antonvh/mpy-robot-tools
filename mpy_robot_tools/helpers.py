@@ -49,7 +49,7 @@ def scale(val, src, dst):
 
 
 class PBUltrasonicSensor:
-    """Robot's ultrasonic sensor wrapper."""
+    """Robot's ultrasonic sensor helper."""
 
     def __init__(self, sensor_port):
         """
@@ -77,7 +77,7 @@ class PBUltrasonicSensor:
 
 
 class USLights:
-    """Ultrasonic sensor lights wrapper."""
+    """Ultrasonic sensor lights helper."""
 
     def __init__(self, sensor) -> None:
         self.sensor = sensor
