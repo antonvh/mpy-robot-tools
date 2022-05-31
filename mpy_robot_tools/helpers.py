@@ -131,7 +131,7 @@ class PBMotor:
         self.reset_angle()
 
     def dc(self, duty):
-        """Returns the motor's dc."""
+        """Sets the motor's dc."""
         self.control.dc(duty)
 
     def angle(self):
