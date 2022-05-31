@@ -4,9 +4,11 @@
 # Copy the contents of install_mpy_robot_tools.py into an empty SPIKE Prime/LEGO MINDSTORMS project
 # And run to install
 
-import binascii, mpy_cross, time
+import binascii
 import hashlib
+import mpy_cross
 import os
+import time
 from functools import partial
 
 LIB = '../mpy_robot_tools/'
