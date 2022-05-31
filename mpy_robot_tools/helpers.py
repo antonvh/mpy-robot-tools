@@ -141,9 +141,9 @@ class PBMotor:
     def reset_angle(self, *args):
         """Reset motor's angle.
 
-            Args:
-                *args (optional): Pass 0 to set current position to zero. Without arguments this resets to the absolute
-                encoder position
+        Args:
+            *args (optional): Pass 0 to set current position to zero. Without arguments this resets to the absolute
+            encoder position
         """
         self.control.reset_angle(*args)
 
@@ -153,18 +153,18 @@ class PBMotor:
     def run(self, speed):
         """Runs the motor at the specified speed.
 
-            Args:
-                speed (int?): speed value.
+        Args:
+            speed (int?): speed value.
         """
         self.control.run(speed)
 
     def run_time(self, speed, time, wait=True):
         """Runs the motor at the specified speed.
 
-            Args:
-                speed (int): Speed value.
-                time (float): Time in milliseconds.
-                wait (bool): ..... Default value True.
+        Args:
+            speed (int): Speed value.
+            time (float): Time in milliseconds.
+            wait (bool): ..... Default value True.
 
         """
         self.control.run_time(speed, time, wait)
@@ -172,10 +172,10 @@ class PBMotor:
     def run_angle(self, speed, rotation_angle, wait=True):
         """Runs the motor at a particular rotation angle and speed.
 
-            Args:
-                speed (int): Speed value.
-                rotation_angle (int): Angle value.
-                wait (bool): ..... Default value True.
+        Args:
+            speed (int): Speed value.
+            rotation_angle (int): Angle value.
+            wait (bool): ..... Default value True.
 
         """
         self.control.run_angle(speed, rotation_angle, wait)
@@ -183,10 +183,10 @@ class PBMotor:
     def run_target(self, speed, target_angle, wait=True):
         """Runs the motor at a particular target angle and speed.
 
-            Args:
-                speed (int): Speed value.
-                target_angle (int): Angle value.
-                wait (bool): ..... Default value True.
+        Args:
+            speed (int): Speed value.
+            target_angle (int): Angle value.
+            wait (bool): ..... Default value True.
 
         """
         self.control.run_target(speed, target_angle, wait)
