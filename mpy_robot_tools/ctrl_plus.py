@@ -28,12 +28,13 @@ ORANGE = const(8)
 RED = const(9)
 WHITE = const(10)
 
+
 class SmartHub():
     __PORTS = {
-        1:0, 2:1, 3:2, 4:3,
-        "A":0, "B":1, "C":2, "D":3}
+        1: 0, 2: 1, 3: 2, 4: 3,
+        "A": 0, "B": 1, "C": 2, "D": 3}
 
-    def __init__(self, ble_handler:BLEHandler=None):
+    def __init__(self, ble_handler: BLEHandler = None):
         if ble_handler is None:
             ble_handler = BLEHandler()
         self.ble_handler = ble_handler
@@ -63,7 +64,7 @@ class SmartHub():
             mode = 0
             for i in range(4):
                 # SUBSCRIBE_MODE
-                self.write(0x0A,0x00,0x41, i, mode, 0x01, 0x00, 0x00, 0x00, 0x01)
+                self.write(0x0A, 0x00, 0x41, i, mode, 0x01, 0x00, 0x00, 0x00, 0x01)
                 sleep_ms(100)
                 # GET_MODE_INFO
                 self.write(0x06, 0x00, 0x22, i, mode, 0x80)
@@ -85,7 +86,7 @@ class SmartHub():
         self.ble_handler.lego_write(
             struct.pack("%sB" % len(data), *data),
             self._conn_handle
-            )
+        )
 
     def set_led_color(self, idx):
         self.write(0x08, 0x00, 0x81, 0x32, 0x11, 0x51, 0x00, idx)
@@ -102,10 +103,10 @@ class SmartHub():
             self.hub_data[port] = payload
         elif message_type == 0x44:
             self.mode_info[port] = {
-                _MODE : payload[0],
-                _MODE_BYTE : payload[1],
-                _MODE_DATA_SETS : payload[2],
-                _MODE_DATA_SET_TYPE : payload[3],
+                _MODE: payload[0],
+                _MODE_BYTE: payload[1],
+                _MODE_DATA_SETS: payload[2],
+                _MODE_DATA_SET_TYPE: payload[3],
             }
 
     def unpack_data(self, port, fmt="3h"):
@@ -126,14 +127,15 @@ class SmartHub():
 
     def run_target(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
         degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
-        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0D, degree_bits[0], degree_bits[1], degree_bits[2], degree_bits[3], speed, max_power, 0x7E)
+        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0D, degree_bits[0], degree_bits[1], degree_bits[2],
+                   degree_bits[3], speed, max_power, 0x7E)
 
     def mode(self, port, mode, *data):
         # set_mode
-        self.write(0x0A,0x00,0x41, self.__PORTS[port], mode, 0x01, 0x00, 0x00, 0x00, 0x01)
+        self.write(0x0A, 0x00, 0x41, self.__PORTS[port], mode, 0x01, 0x00, 0x00, 0x00, 0x01)
         sleep_ms(100)
         if data:
-            self.write(7+len(data), 0x00, 0x81, self.__PORTS[port], 0x00, 0x51, mode, *data)
+            self.write(7 + len(data), 0x00, 0x81, self.__PORTS[port], 0x00, 0x51, mode, *data)
             sleep_ms(100)
         # request_mode_info
         self.write(0x06, 0x00, 0x22, self.__PORTS[port], mode, 0x80)
@@ -151,7 +153,8 @@ class SmartHub():
     def run_angle(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
         # Rotate motor for a given number of degrees relative to current position
         degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
-        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0B, degree_bits[0], degree_bits[1], degree_bits[2], degree_bits[3], speed, max_power, 0x7E)
+        self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0B, degree_bits[0], degree_bits[1], degree_bits[2],
+                   degree_bits[3], speed, max_power, 0x7E)
 
     def get(self, port):
         port = self.__PORTS[port]
@@ -168,9 +171,9 @@ class SmartHub():
                 message = struct.unpack("%sb" % len(payload), payload)
                 value = message[:no_data_sets]
             elif data_set_type == 0x01:
-                message = struct.unpack("%sh" % (len(payload)//2), payload)
+                message = struct.unpack("%sh" % (len(payload) // 2), payload)
                 value = message[:no_data_sets]
             elif data_set_type == 0x02:
-                message = struct.unpack("%si" % (len(payload)//4), payload)
+                message = struct.unpack("%si" % (len(payload) // 4), payload)
                 value = message[:no_data_sets]
             return value
