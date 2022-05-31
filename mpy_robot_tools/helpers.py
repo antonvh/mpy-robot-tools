@@ -21,7 +21,7 @@ def track_target(motor, target=0, gain=1.5):
         gain (float): ...
 
     Return:
-        New position of the motor.
+        The current position of the motor.
 
     """
     m_pos = motor.get()[1]
