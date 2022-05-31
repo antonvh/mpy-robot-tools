@@ -46,6 +46,6 @@ for file, code, hash_gen in encoded:
         print(e)
 
 if not error:
-    print('Library written succesfully. Reset your hub.')
+    print('Library written successfully. Reset your hub.')
 else:
     print('Failure in writing library!')
