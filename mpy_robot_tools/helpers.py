@@ -38,8 +38,8 @@ class PBUltrasonicSensor:
 
     # Parameters
     # port (Port) – Port to which the sensor is connected.
-    def __init__(self, port):
-        self.sensor = eval("port." + port + ".device")
+    def __init__(self, sensor_port):
+        self.sensor = eval("port." + sensor_port + ".device")
         self.lights = USLights(self.sensor)
 
     def distance(self):
