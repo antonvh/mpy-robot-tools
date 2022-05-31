@@ -102,16 +102,13 @@ class USLights:
 
     def off(self):
         """Turns off all the lights."""
-
         self.on(0)
 
 
 class PBMotor:
-    """
-    Universal motor with universal methods
-    so we can write helpers platform agnostic.
-    this class takes any motor type object as parameter
-    and runs it pybricks-style, with the pybricks motor methods
+    """Universal motor with universal methods to write agnostic platform helpers.
+
+    This class takes any motor type object as parameter and runs it pybricks-style, with the pybricks motor methods.
     """
 
     def __init__(self, motor):
@@ -134,32 +131,68 @@ class PBMotor:
         self.reset_angle()
 
     def dc(self, duty):
+        """Returns the motor's dc."""
         self.control.dc(duty)
 
     def angle(self):
+        """Returns the motor's angle."""
         return self.control.angle()
 
     def reset_angle(self, *args):
-        # Pass 0 to set current position to zero
-        # Without arguments this resets to the absolute encoder position
+        """Reset motor's angle.
+
+            Args:
+                *args (optional): Pass 0 to set current position to zero. Without arguments this resets to the absolute
+                encoder position
+        """
         self.control.reset_angle(*args)
 
     def track_target(self, *args, **kwargs):
         self.control.track_target(*args, **kwargs)
 
     def run(self, speed):
+        """Runs the motor at the specified speed.
+
+            Args:
+                speed (int?): speed value.
+        """
         self.control.run(speed)
 
     def run_time(self, speed, time, wait=True):
+        """Runs the motor at the specified speed.
+
+            Args:
+                speed (int?): Speed value.
+                time (int?): Time in (ms)?
+                wait (bool): ..... Default value True.
+
+        """
         self.control.run_time(speed, time, wait)
 
     def run_angle(self, speed, rotation_angle, wait=True):
+        """Runs the motor at a particular rotation angle and speed.
+
+            Args:
+                speed (int?): Speed value.
+                rotation_angle (int?): Angle value.
+                wait (bool): ..... Default value True.
+
+        """
         self.control.run_angle(speed, rotation_angle, wait)
 
     def run_target(self, speed, target_angle, wait=True):
+        """Runs the motor at a particular target angle and speed.
+
+            Args:
+                speed (int?): Speed value.
+                target_angle (int?): Angle value.
+                wait (bool): ..... Default value True.
+
+        """
         self.control.run_target(speed, target_angle, wait)
 
     def stop(self):
+        """Stops the motor."""
         self.dc(0)
 
 
