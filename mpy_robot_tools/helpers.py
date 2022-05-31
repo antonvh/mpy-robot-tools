@@ -13,6 +13,17 @@ def clamp_int(n, floor=-100, ceiling=100):
 
 
 def track_target(motor, target=0, gain=1.5):
+    """Track target ??.
+
+    Args:
+        motor (?): ....
+        target (int): ....
+        gain (float): ...
+
+    Return:
+        New position of the motor.
+
+    """
     m_pos = motor.get()[1]
     motor.pwm(
         clamp_int((m_pos - target) * -gain)
@@ -26,7 +37,7 @@ def scale(val, src, dst):
     Args:
         val (float | int): ....
         src (tuple): ....
-        dst (tuple)
+        dst (tuple):
 
     Return:
         Scaled value.
