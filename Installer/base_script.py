@@ -40,7 +40,7 @@ for file, code, hash_gen in encoded:
         print('Hash generated: ', hash_gen)
 
         if hash_check != hash_gen:
-            print('Failed hash of .mpy on SPIKE: ' + hash_check)
+            print('Failed hash of .mpy on the robot: ' + hash_check)
             error = True
     except Exception as e:
         print(e)
