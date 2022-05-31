@@ -24,7 +24,6 @@ except:
 
 for file, code, hash_gen in encoded:
     print("Writing file ", file)
-    # hash_gen=code[1]
     target_loc = '/projects/mpy_robot_tools/' + file
 
     print('writing ' + file + ' to folder /projects/mpy_robot_tools')
