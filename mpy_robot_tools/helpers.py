@@ -1,20 +1,24 @@
 from machine import Timer
 from micropython import const
 from time import sleep
+
 try:
     from hub import port
 except:
     from .hub_stub import port
 
+
 def clamp_int(n, floor=-100, ceiling=100):
-    return max(min(round(n),ceiling),floor)
+    return max(min(round(n), ceiling), floor)
+
 
 def track_target(motor, target=0, gain=1.5):
     m_pos = motor.get()[1]
     motor.pwm(
-        clamp_int((m_pos-target)*-gain)
+        clamp_int((m_pos - target) * -gain)
     )
     return m_pos
+
 
 def scale(val, src, dst):
     """
@@ -30,12 +34,12 @@ def scale(val, src, dst):
 
 
 class PBUltrasonicSensor():
-# LEGO® SPIKE Color Sensor.
+    # LEGO® SPIKE Color Sensor.
 
-# Parameters
-# port (Port) – Port to which the sensor is connected.
+    # Parameters
+    # port (Port) – Port to which the sensor is connected.
     def __init__(self, port):
-        self.sensor = eval("port."+port+".device")
+        self.sensor = eval("port." + port + ".device")
         self.lights = USLights(self.sensor)
 
     def distance(self):
@@ -52,6 +56,7 @@ class PBUltrasonicSensor():
         else:
             return dist * 10
 
+
 class USLights():
     def __init__(self, sensor) -> None:
         self.sensor = sensor
@@ -62,17 +67,18 @@ class USLights():
         # Parameters
         # brightness (tuple of brightness: %) – Brightness of each light, in the order shown above. If you give one brightness value instead of a tuple, all lights get the same brightness.
         if type(brightness) == int:
-            lights = [clamp_int(brightness/10, floor=0, ceiling=10)]*4
+            lights = [clamp_int(brightness / 10, floor=0, ceiling=10)] * 4
         elif len(brightness) == 4:
-            lights = [clamp_int(l/10, floor=0, ceiling=10) for l in brightness]
+            lights = [clamp_int(l / 10, floor=0, ceiling=10) for l in brightness]
         else:
-            lights = (10,10,10,10)
+            lights = (10, 10, 10, 10)
         self.sensor.mode(5, bytes(lights))
         self.sensor.mode(0)
 
     def off(self):
         #  Turns off all the lights.
         self.on(0)
+
 
 class PBMotor():
     """
@@ -81,7 +87,7 @@ class PBMotor():
     this class takes any motor type object as parameter
     and runs it pybricks-style, with the pybricks motor methods
     """
-    
+
     def __init__(self, motor):
         motor_dir = dir(motor)
         if '_motor_wrapper' in motor_dir:
@@ -93,7 +99,7 @@ class PBMotor():
         elif 'upper' in motor_dir:
             # We have a string
             if motor in 'ABCDEFGH':
-                self.control = MSHubControl(eval("port."+motor+".motor"))
+                self.control = MSHubControl(eval("port." + motor + ".motor"))
             else:
                 self.control = MotorStub()
         else:
@@ -130,13 +136,15 @@ class PBMotor():
     def stop(self):
         self.dc(0)
 
+
 class MSHubControl():
     """
     add the control class to PB motor to stay in line with the namespace
     here I just want to call motor.control.done() to check if it is
     still running.
     """
-    DESIGN_SPEED = 905 # deg/s
+    DESIGN_SPEED = 905  # deg/s
+
     def __init__(self, motor) -> None:
         self.motor = motor
         # speed_pct, rel_pos, abs_pos, pwm
@@ -147,17 +155,17 @@ class MSHubControl():
         self.motor.pwm(clamp_int(duty))
 
     def run(self, speed):
-        self.motor.run_at_speed(clamp_int(speed/self.DESIGN_SPEED*100))
+        self.motor.run_at_speed(clamp_int(speed / self.DESIGN_SPEED * 100))
 
     def run_time(self, speed, time, wait):
         if wait:
             self.run(speed)
-            sleep(time/1000)
+            sleep(time / 1000)
             self.dc(0)
         else:
             self.timer.init(
-                mode=Timer.ONE_SHOT, 
-                period=time, 
+                mode=Timer.ONE_SHOT,
+                period=time,
                 callback=lambda x: self.motor.dc(0))
             self.run(speed)
 
@@ -196,10 +204,11 @@ class MSHubControl():
     def track_target(self, target=0, gain=1.5):
         # If track target isn't called again within 500ms, fall back to run_to_position
         self.timer.init(
-            mode=Timer.ONE_SHOT, 
-            period=500, 
+            mode=Timer.ONE_SHOT,
+            period=500,
             callback=lambda x: self.motor.run_to_position(round(target), 100))
         track_target(self.motor, target, gain)
+
 
 class MotorStub():
     __angle = 0
@@ -223,7 +232,7 @@ class MotorStub():
     @staticmethod
     def done():
         return True
-    
+
     @staticmethod
     def stop():
         pass
