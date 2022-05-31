@@ -29,7 +29,7 @@ RED = const(9)
 WHITE = const(10)
 
 
-class SmartHub():
+class SmartHub:
     __PORTS = {
         1: 0, 2: 1, 3: 2, 4: 3,
         "A": 0, "B": 1, "C": 2, "D": 3}
