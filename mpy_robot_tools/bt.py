@@ -81,7 +81,6 @@ _UART_SERVICE = (
 )
 
 
-# Generate a payload to be passed to gap_advertise(adv_data=...).
 def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
     """Generate advertising payload.
 
