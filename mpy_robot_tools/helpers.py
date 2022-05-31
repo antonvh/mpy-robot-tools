@@ -162,8 +162,8 @@ class PBMotor:
         """Runs the motor at the specified speed.
 
             Args:
-                speed (int?): Speed value.
-                time (int?): Time in (ms)?
+                speed (int): Speed value.
+                time (float): Time in milliseconds.
                 wait (bool): ..... Default value True.
 
         """
@@ -173,8 +173,8 @@ class PBMotor:
         """Runs the motor at a particular rotation angle and speed.
 
             Args:
-                speed (int?): Speed value.
-                rotation_angle (int?): Angle value.
+                speed (int): Speed value.
+                rotation_angle (int): Angle value.
                 wait (bool): ..... Default value True.
 
         """
@@ -184,8 +184,8 @@ class PBMotor:
         """Runs the motor at a particular target angle and speed.
 
             Args:
-                speed (int?): Speed value.
-                target_angle (int?): Angle value.
+                speed (int): Speed value.
+                target_angle (int): Angle value.
                 wait (bool): ..... Default value True.
 
         """
