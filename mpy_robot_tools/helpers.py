@@ -55,7 +55,7 @@ class PBUltrasonicSensor:
         """
 
         dist = self.sensor.get()[0]
-        if dist == None:
+        if dist is None:
             return 2000
         else:
             return dist * 10
