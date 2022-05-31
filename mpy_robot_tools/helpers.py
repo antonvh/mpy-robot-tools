@@ -197,11 +197,11 @@ class PBMotor:
 
 
 class MSHubControl:
+    """Defines a controller for the PBMotor class.
+
+    This class additionally adds a method `done` to check if the motor is still running.
     """
-    add the control class to PB motor to stay in line with the namespace
-    here I just want to call motor.control.done() to check if it is
-    still running.
-    """
+
     DESIGN_SPEED = 905  # deg/s
 
     def __init__(self, motor) -> None:
