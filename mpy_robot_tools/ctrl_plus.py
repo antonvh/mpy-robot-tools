@@ -30,6 +30,9 @@ WHITE = const(10)
 
 
 class SmartHub:
+    """Class for ...
+
+    """
     __PORTS = {
         1: 0, 2: 1, 3: 2, 4: 3,
         "A": 0, "B": 1, "C": 2, "D": 3}
@@ -46,9 +49,11 @@ class SmartHub:
         self.mode_info = {}
 
     def is_connected(self):
+        """Returns `True` if the SmartHub is connected, otherwise `False`."""
         return self._conn_handle is not None
 
     def connect(self):
+        """Connects to the SmartHub and subscribe to its motion data."""
         self._conn_handle = self.ble_handler.connect_lego()
         if self._conn_handle is not None:
             sleep_ms(500)
@@ -78,23 +83,41 @@ class SmartHub:
             print("Connection failed")
 
     def disconnect(self):
+        """Disconnects from the SmartHub."""
         if self._conn_handle is not None:
             self.ble_handler.disconnect(self._conn_handle)
             self._conn_handle = None
 
     def write(self, *data):
+        """Writes data to the SmartHub."""
         self.ble_handler.lego_write(
             struct.pack("%sB" % len(data), *data),
             self._conn_handle
         )
 
     def set_led_color(self, idx):
+        """Sets the LED color.
+
+        Args:
+            idx (byte): Color value.
+        """
         self.write(0x08, 0x00, 0x81, 0x32, 0x11, 0x51, 0x00, idx)
 
     def set_remote_led_color(self, idx):
+        """Sets the remote LED color.
+
+        Args:
+            idx (byte): Color value.
+        """
         self.write(0x08, 0x00, 0x81, 0x34, 0x11, 0x51, 0x00, idx)
 
     def __on_notify(self, data):
+        """Defines a callback that will be called whenever new motion data is received.
+
+        Args:
+            data (bytearray): Motion data.
+
+        """
         # hub = data[1]
         message_type = data[2]
         port = data[3]
@@ -110,28 +133,64 @@ class SmartHub:
             }
 
     def unpack_data(self, port, fmt="3h"):
+        """Unpacks data from the specified port.
+
+        Args:
+            port (int | str): Port
+            fmt (str): ... Default value `"3h"`
+
+        """
         if port in self.hub_data.keys():
             return struct.unpack(fmt, self.hub_data[port])
 
     def acc(self):
+        """Returns the current acceleration."""
         return self.unpack_data(__HUB_PORT_ACC)
 
     def gyro(self):
+        """Returns the current gyroscope value."""
         return self.unpack_data(__HUB_PORT_GYRO)
 
     def tilt(self):
+        """Returns the current tilt value."""
         return self.unpack_data(__HUB_PORT_TILT)
 
     def dc(self, port, pct):
+        """Sets the deceleration value.
+
+        Args:
+            port (str | int): ....
+            pct (int): ...
+
+        """
         self.write(0x06, 0x00, 0x81, self.__PORTS[port], 0x11, 0x51, 0x00, clamp_int(pct))
 
     def run_target(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
+        """Rotates a particular motor for a given number of degrees.
+
+        Args:
+            port (str | int): ....
+            degrees (int): Degrees value.
+            speed (int): Speed value. Default value `50`.
+            max_power (int): Max power value. Default value `100`.
+            acceleration (int): Acceleration value. Default value `100`.
+            deceleration (int): Deceleration value. Default value `100`.
+            stop_action (int): Deceleration value. Default value `0`.
+        """
         degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
         self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0D, degree_bits[0], degree_bits[1], degree_bits[2],
                    degree_bits[3], speed, max_power, 0x7E)
 
     def mode(self, port, mode, *data):
-        # set_mode
+        """Sets a new mode.
+
+        Args:
+            port (str | int): ....
+            mode (int): New mode.
+            *data (optional):
+
+        """
+
         self.write(0x0A, 0x00, 0x41, self.__PORTS[port], mode, 0x01, 0x00, 0x00, 0x00, 0x01)
         sleep_ms(100)
         if data:
@@ -142,21 +201,61 @@ class SmartHub:
         sleep_ms(100)
 
     def run(self, port, speed, max_power=100, acceleration=100, deceleration=100):
-        # Start motor at given speed
+        """Starts a particular motor at the given speed.
+
+        Args:
+            port (str | int): ....
+            speed (int): Speed value.
+            max_power (int): Max power value. Default value `100`.
+            acceleration (int): Acceleration value. Default value `100`.
+            deceleration (int): Deceleration value. Default value `100`.
+
+        """
+
         self.write(0x09, 0x00, 0x81, self.__PORTS[port], 0x11, 0x07, clamp_int(speed), max_power, 0x00)
 
     def run_time(self, port, time, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
-        # Rotate motor for a given time
+        """Rotates a particular motor for a given time.
+
+        Args:
+            port (str | int): ....
+            time (int): Time value.
+            speed (int): Speed value.
+            max_power (int): Max power value. Default value `100`.
+            acceleration (int): Acceleration value. Default value `100`.
+            deceleration (int): Deceleration value. Default value `100`.
+            stop_action (int): Deceleration value. Default value `0`.
+
+        """
+
         time_bits = struct.unpack("<BB", struct.pack("<H", time))
         self.write(0x0B, 0x00, 0x81, self.__PORTS[port], 0x11, 0x09, time_bits[0], time_bits[1], speed, max_power, 0x00)
 
     def run_angle(self, port, degrees, speed=50, max_power=100, acceleration=100, deceleration=100, stop_action=0):
-        # Rotate motor for a given number of degrees relative to current position
+        """Rotates a particular motor for a given number of degrees relative to current position.
+
+        Args:
+            port (str | int): ....
+            degrees (int): Degrees value.
+            speed (int): Speed value.
+            max_power (int): Max power value. Default value `100`.
+            acceleration (int): Acceleration value. Default value `100`.
+            deceleration (int): Deceleration value. Default value `100`.
+            stop_action (int): Deceleration value. Default value `0`.
+
+        """
+
         degree_bits = struct.unpack("<BBBB", struct.pack("<i", degrees))
         self.write(0x0D, 0x00, 0x81, self.__PORTS[port], 0x11, 0x0B, degree_bits[0], degree_bits[1], degree_bits[2],
                    degree_bits[3], speed, max_power, 0x7E)
 
     def get(self, port):
+        """Returns the info data about the specified port.
+
+        Args:
+            port (int | str): Port.
+
+        """
         port = self.__PORTS[port]
         if port in self.hub_data:
             value = None
