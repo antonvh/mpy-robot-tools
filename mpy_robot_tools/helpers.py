@@ -61,7 +61,7 @@ class PBUltrasonicSensor:
             return dist * 10
 
 
-class USLights():
+class USLights:
     def __init__(self, sensor) -> None:
         self.sensor = sensor
 
@@ -84,7 +84,7 @@ class USLights():
         self.on(0)
 
 
-class PBMotor():
+class PBMotor:
     """
     Universal motor with universal methods
     so we can write helpers platform agnostic.
@@ -141,7 +141,7 @@ class PBMotor():
         self.dc(0)
 
 
-class MSHubControl():
+class MSHubControl:
     """
     add the control class to PB motor to stay in line with the namespace
     here I just want to call motor.control.done() to check if it is
@@ -214,7 +214,7 @@ class MSHubControl():
         track_target(self.motor, target, gain)
 
 
-class MotorStub():
+class MotorStub:
     __angle = 0
     __dc = 0
 
