@@ -77,14 +77,20 @@ class PBUltrasonicSensor:
 
 
 class USLights:
+    """Ultrasonic sensor lights wrapper."""
+
     def __init__(self, sensor) -> None:
         self.sensor = sensor
 
     def on(self, brightness=100):
-        # Turns on the lights at the specified brightness.
+        """Turns on the lights at the specified brightness.
 
-        # Parameters
-        # brightness (tuple of brightness: %) – Brightness of each light, in the order shown above. If you give one brightness value instead of a tuple, all lights get the same brightness.
+        Args:
+            brightness (tuple | int): Brightness of each light, in the order shown above. If you give one brightness
+            value instead of a tuple, all lights get the same brightness.
+
+        """
+
         if type(brightness) == int:
             lights = [clamp_int(brightness / 10, floor=0, ceiling=10)] * 4
         elif len(brightness) == 4:
@@ -95,7 +101,8 @@ class USLights:
         self.sensor.mode(0)
 
     def off(self):
-        #  Turns off all the lights.
+        """Turns off all the lights."""
+
         self.on(0)
 
 
