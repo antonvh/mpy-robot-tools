@@ -30,7 +30,10 @@ WHITE = const(10)
 
 
 class SmartHub:
-    """Class for ...
+    """SmartHub is a class for LEGO Power Functions 2.0 battery boxes like TechnicHub, CityHub and BoostHub.
+
+    The class implements communication to and from these boxes using the lpf2 protocol over Bluetooth Low Energy (BLE).
+    LEGO has documented it here: https://lego.github.io/lego-ble-wireless-protocol-docs
 
     """
     __PORTS = {
