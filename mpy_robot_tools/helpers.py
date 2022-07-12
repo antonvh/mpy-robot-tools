@@ -191,6 +191,9 @@ class PBMotor:
         """
         self.control.run_target(speed, target_angle, wait)
 
+    def speed(self):
+        return self.control.speed()
+
     def stop(self):
         """Stops the motor."""
         self.dc(0)
@@ -259,6 +262,9 @@ class MSHubControl:
 
     def angle(self):
         return self.motor.get()[1]
+
+    def speed(self):
+        return self.motor.get()[2]*self.DESIGN_SPEED/100
 
     def track_target(self, target=0, gain=1.5):
         # If track target isn't called again within 500ms, fall back to run_to_position
