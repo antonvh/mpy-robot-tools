@@ -213,11 +213,17 @@ class MSHubControl:
         self.motor.mode([(1, 0), (2, 0), (3, 0), (0, 0)])
         self.timer = Timer()
 
+    def _pct_2_angular_speed(self, pct_speed):
+        return round(pct_speed * self.DESIGN_SPEED / 100)
+
+    def _angular_2_pct_speed(self, angular_speed):
+        return clamp_int(angular_speed / self.DESIGN_SPEED * 100)
+
     def dc(self, duty):
         self.motor.pwm(clamp_int(duty))
 
     def run(self, speed):
-        self.motor.run_at_speed(clamp_int(speed / self.DESIGN_SPEED * 100))
+        self.motor.run_at_speed(self._angular_2_pct_speed(speed))
 
     def run_time(self, speed, time, wait):
         if wait:
@@ -232,14 +238,14 @@ class MSHubControl:
             self.run(speed)
 
     def run_angle(self, speed, rotation_angle, wait):
-        self.motor.run_for_degrees(rotation_angle, speed)
+        self.motor.run_for_degrees(rotation_angle, self._angular_2_pct_speed(speed))
         if wait:
             sleep(0.05)
             while not self.done():
                 sleep(0.015)
 
     def run_target(self, speed, target_angle, wait):
-        self.motor.run_to_position(target_angle, speed)
+        self.motor.run_to_position(target_angle, self._angular_2_pct_speed(speed))
         if wait:
             sleep(0.05)
             while not self.done():
@@ -264,7 +270,9 @@ class MSHubControl:
         return self.motor.get()[1]
 
     def speed(self):
-        return round(self.motor.get()[0]*self.DESIGN_SPEED/100)
+        return self._pct_2_angular_speed(
+            self.motor.get()[0]
+        )
 
     def track_target(self, target=0, gain=1.5):
         # If track target isn't called again within 500ms, fall back to run_to_position
