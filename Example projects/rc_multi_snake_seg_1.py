@@ -16,7 +16,9 @@ from projects.mpy_robot_tools.light_matrix import image_99
 SEGMENT = 1
 LOGO = image_99(50+SEGMENT) # 5 looks like an S.
 CONNECT_ANIMATION = [LOGO + img for img in CONNECT_IMAGES]
-head_link = UARTPeripheral(name="snakes"+str(SEGMENT))
+
+# Create link to the snake head, and advertise self as snakesN where N is the segment number.
+head_link = UARTPeripheral(name="snakes"+str(SEGMENT), buffered=False)
 
 motors = [
     port.C.motor,

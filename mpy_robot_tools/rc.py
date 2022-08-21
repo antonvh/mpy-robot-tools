@@ -41,7 +41,7 @@ class RCReceiver(UARTPeripheral):
     def __init__(self, **kwargs):
         self.set_logo("00000:05550:05950:05550:00000")
         # The super init also calls on disconnect.
-        super().__init__(**kwargs)
+        super().__init__(buffered=False, **kwargs)
         self.buffer = bytearray(struct.calcsize("bbbbBBhhB"))
 
     def _on_disconnect(self, *data):

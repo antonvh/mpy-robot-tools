@@ -375,7 +375,7 @@ class BLEHandler:
 
     def notify(self, data, val_handle, conn_handle=None):
         # Notify all connected centrals interested in the handle
-        if conn_handle is None:
+        if conn_handle is not None:
             self._ble.gatts_notify(conn_handle, val_handle, data)
         else:
             for conn_handle in self._connected_centrals:
@@ -495,9 +495,9 @@ class BleUARTBase:
     """Base class for ....
 
     """
-    def __init__(self, ble_handler: BLEHandler = None, buffered=False):
+    def __init__(self, ble_handler: BLEHandler = None, buffered=True):
         self.buffered = buffered
-        self.buffer = bytearray()
+        self.read_buffer = bytearray()
         if ble_handler is None:
             ble_handler = BLEHandler()
         self.ble_handler = ble_handler
@@ -505,22 +505,24 @@ class BleUARTBase:
     def _on_rx(self, data):
         # print("RX!", data)   # TODO: Remove
         if self.buffered:
-            self.buffer += data
+            self.read_buffer += data
         else:
-            self.buffer = data
+            self.read_buffer = data
 
     def any(self):
-        return len(self.buffer)
+        return len(self.read_buffer)
 
     def read(self, n=-1):
-        if not self.buffered:
-            return self.buffer
-        else:
-            bufsize = len(self.buffer)
+        # if not self.buffered:
+        #     result = self.read_buffer
+        #     self.read_buffer = bytearray()
+        #     return result
+        # else:
+            bufsize = len(self.read_buffer)
             if n < 0 or n > bufsize:
                 n = bufsize
-            data = self.buffer[:n]
-            self.buffer = self.buffer[n:]
+            data = self.read_buffer[:n]
+            self.read_buffer = self.read_buffer[n:]
             return data
     # TODO: Implement readline() and the rest of the UART methods.
 
@@ -561,10 +563,11 @@ class UARTPeripheral(BleUARTBase):
         if self.is_connected():
             try:
                 # In case this doesn't get a string or bytes.
-                self.ble_handler.notify(data, self._handle_tx)
+                for c in self.connected_centrals:
+                    self.ble_handler.notify(data, val_handle=self._handle_tx, conn_handle=c)
             except Exception as e:
                 # self.ble_handler.notify(repr(data), self._handle_tx)
-                print(e)
+                print(e, data, type(data))
 
 
 class UARTCentral(BleUARTBase):
@@ -609,10 +612,11 @@ class UARTCentral(BleUARTBase):
             self.ble_handler.disconnect(self._conn_handle)
 
     def write(self, data):
+        # max 20 bytes! Should check for this, and maybe split in multiple write commands.
         if self.is_connected():
             try:
                 # In case this doesn't get a string or bytes.
-                self.ble_handler.uart_write(data, self._conn_handle, self._rx_handle)
-            except Exception as e:
-                # self.ble_handler.uart_write(repr(data), self._conn_handle)
-                print(e)
+                for i in range(0,len(data),19):
+                    self.ble_handler.uart_write(data[i:i+18], self._conn_handle, self._rx_handle)
+            except Exception as e:                
+                print("Error writing:", data, type(data), len(data), e)

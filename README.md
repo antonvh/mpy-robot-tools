@@ -30,6 +30,25 @@ To factory reset your hub to factory settings, using LEGO app, press the Hub Con
 - UARTCentral() - Connects to UARTPeripheral and implements read() and write() like serial uart.
 - UARTPeripheral() - Waits for a connection from UARTCentral and implements read() and write() like serial uart.
 
+By default the UART objects are buffered. They will remember everything ever written to them and you should flush their buffer with `_ = read()` to start clean. For remote control and state communication the buffer gets in the way. You just want to read the most recent state when it arrives. In that case initialize with `buffered=False`
+Example:
+```
+# Create link to the snake head, and advertise self as tail.
+head_link = UARTPeripheral(name="tail", buffered=False)
+```
+
+If you have multiple Bluetooth objects, like a remote control, a serialtalk and a plain UART, you need to pass a single BLEHandler to all of them:
+```
+from projects.mpy_robot_tools.bt import BLEHandler, UARTCentral
+from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
+
+ble = BLEHandler()
+seg_1_link = UARTCentral(ble_handler=ble)
+seg_2_link = UARTCentral(ble_handler=ble)
+rcv = RCReceiver(name="snake", ble_handler=ble)
+```
+
+
 ### rc.py ###
 
 - Use the [MINDSTORMS Ble RC Anroid app](https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc) or another Smart Hub to [remote control your robot](https://gist.github.com/antonvh/1f1d9c563268b4a8e9e1d7297e62ad53) or [Hot Rod](https://gist.github.com/antonvh/88548d95e771043662f038de451e28f2)
