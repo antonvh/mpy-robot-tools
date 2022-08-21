@@ -1,8 +1,10 @@
-# Paste this script in an empty Python project
-# Run once to install
-# Warning: it can take a while to download and start. Be patient.
-# Watch console output to check progress.
-# After reboot DO NOT LET THE SOFTWARE UPDATE YOUR HUB
+#### HOW TO Use this script ####
+# 1. REBOOT your hub first!
+# 2. Paste this script in an empty Python project
+# 3. Run once
+# 4. WAIT!! The play button will stop spinning, but the script is running!
+# 5. When there is no more text scrolling in the console, the installation is done.
+
 # Works with the LEGO SPIKE app and the LEGO MINDSTORMS app
 
 from ubinascii import hexlify, a2b_base64
@@ -46,6 +48,6 @@ for file, code, hash_gen in encoded:
         print(e)
 
 if not error:
-    print('Library written successfully. Reset your hub.')
+    print('Library written successfully. Enjoy!')
 else:
     print('Failure in writing library!')

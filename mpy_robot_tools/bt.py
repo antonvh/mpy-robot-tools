@@ -198,6 +198,7 @@ class BLEHandler:
         self._connected_centrals = set()
         self._scan_result_callback = None
         self._scan_done_callback = None
+        self._write_done_callbacks = {}
         self._conn_callback = None
         self._disconn_callbacks = {}
         self._central_conn_callback = None  # Used when centrals connect
@@ -317,6 +318,8 @@ class BLEHandler:
         elif event == _IRQ_GATTC_WRITE_DONE:
             conn_handle, value_handle, status = data
             self.info("TX complete on", conn_handle)
+            if conn_handle in self._write_done_callbacks:
+                self._write_done_callbacks[conn_handle](value_handle, status)
 
         elif event == _IRQ_GATTC_NOTIFY:
             # print("_IRQ_GATTC_NOTIFY") # TODO: Remove
@@ -372,6 +375,9 @@ class BLEHandler:
 
     def on_write(self, value_handle, callback):
         self._write_callbacks[value_handle] = callback
+
+    def on_write_done(self, conn_handle, callback):
+        self._write_done_callbacks[conn_handle] = callback
 
     def notify(self, data, val_handle, conn_handle=None):
         # Notify all connected centrals interested in the handle
@@ -483,6 +489,8 @@ class BLEHandler:
         self._ble.gap_connect(addr_type, addr)
 
     def disconnect(self, conn_handle):
+        if conn_handle in self._write_done_callbacks:
+            del self._write_done_callbacks[conn_handle]
         self._ble.gap_disconnect(conn_handle)
 
     def enable_notify(self, conn_handle, desc_handle, callback=None):
@@ -531,7 +539,8 @@ class UARTPeripheral(BleUARTBase):
     """Class for ....
 
     """
-
+    READS_PER_MS = 0.1
+    
     def __init__(self, name="robot", **kwargs):
         super().__init__(**kwargs)
         self.name = name
@@ -584,7 +593,8 @@ class UARTCentral(BleUARTBase):
         self._tx_handle = 9  # None
         self._rx_handle = 12  # None
         self._on_disconnect()
-
+        self.writing = False
+        
     def __del__(self):
         self.disconnect()
 
@@ -595,14 +605,21 @@ class UARTCentral(BleUARTBase):
         self._conn_handle = None
         self._periph_name = None
 
+    def _on_write_done(self, *args):
+        self.writing = False
+
     def connect(self, name="robot"):
         self._periph_name = name
         self._conn_handle, self._rx_handle, self._tx_handle = self.ble_handler.connect_uart(
             name,
             on_disconnect=self._on_disconnect,
             on_notify=self._on_rx
-            )
-        return self.is_connected()
+            )# Blocks until timeout or device with the right name found
+        if self.is_connected():
+            self.ble_handler.on_write_done(self._conn_handle, self._on_write_done)
+            return True
+        else:
+            return False
 
     def is_connected(self):
         return self._conn_handle is not None
@@ -612,11 +629,16 @@ class UARTCentral(BleUARTBase):
             self.ble_handler.disconnect(self._conn_handle)
 
     def write(self, data):
-        # max 20 bytes! Should check for this, and maybe split in multiple write commands.
         if self.is_connected():
             try:
-                # In case this doesn't get a string or bytes.
-                for i in range(0,len(data),19):
-                    self.ble_handler.uart_write(data[i:i+18], self._conn_handle, self._rx_handle)
+                for i in range(0,len(data),20):
+                    self.ble_handler.uart_write(data[i:i+20], self._conn_handle, self._rx_handle, response=self.buffered)
+                    if self.buffered:
+                        self.writing=True
+                        for i in range(100): #1s timeout
+                            if not self.writing:
+                                break
+                            sleep_ms(10)
+                        self.writing = False
             except Exception as e:                
                 print("Error writing:", data, type(data), len(data), e)
