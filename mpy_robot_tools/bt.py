@@ -187,12 +187,13 @@ class BLEHandler:
     The central always connects to a peripheral. The Peripheral just advertises.
 
     """
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, buf_size=20):
         self._ble = ubluetooth.BLE()
         self._ble.active(True)
         self._ble.irq(self._irq)
         self._reset()
         self.debug = debug
+        self.buf_size=buf_size
 
     def _reset(self):
         self._connected_centrals = set()
@@ -390,7 +391,8 @@ class BLEHandler:
     def register_uart_service(self):
         ((handle_tx, handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
         # set max message size to 100 bytes
-        self._ble.gatts_write(handle_rx, bytes(100))
+        # self._ble.gatts_write(handle_rx, bytes(100))
+        # bufsize seems to be 20 anyway... do we call this at the wrong moment?
         self._ble.gatts_set_buffer(handle_rx, 100)
         self._ble.gatts_set_buffer(handle_tx, 100)
         return handle_tx, handle_rx
@@ -536,10 +538,10 @@ class BleUARTBase:
 
 
 class UARTPeripheral(BleUARTBase):
-    """Class for ....
-
     """
-    READS_PER_MS = 0.1
+    Class for a Nordic UART BLE server/peripheral. 
+    It will advertise as the given name and populate the UART services and characteristics
+    """
     
     def __init__(self, name="robot", **kwargs):
         super().__init__(**kwargs)
@@ -566,9 +568,17 @@ class UARTPeripheral(BleUARTBase):
         self.connected_centrals.add(conn_handle)
 
     def write(self, data):
-        # if not(type(data) is str or type(data) is bytes or type(data) is bytearray):
-        #     data = repr(data)
         # Notify central in 'indicate' mode.
+
+        # This is probably not the proper implementation of write.
+        # According to https://docs.micropython.org/en/latest/library/bluetooth.html,
+        # we should write the tx characteristic locally and then
+        # INDICATE to the client/central that there's an update.
+        # Then read from the client
+        # This will probably raise _IRQ_GATTC_READ_DONE = const(16). To test.
+        # If not, send an indicate_done from the client/central?
+        # When READ_DONE is there, check if it was read from the right client
+        # and fill the buffer again.
         if self.is_connected():
             try:
                 # In case this doesn't get a string or bytes.
@@ -580,7 +590,7 @@ class UARTPeripheral(BleUARTBase):
 
 
 class UARTCentral(BleUARTBase):
-    """Class to connect to single BLE Peripheral.
+    """Class to connect to single BLE Peripheral as a Central
 
     Instantiate more 'centrals' with the same ble handler to connect to
     multiple peripherals. Things will probably break if you instantiate
@@ -617,6 +627,9 @@ class UARTCentral(BleUARTBase):
             )# Blocks until timeout or device with the right name found
         if self.is_connected():
             self.ble_handler.on_write_done(self._conn_handle, self._on_write_done)
+            # Not sure if this does something in a central
+            self.ble_handler.gatts_set_buffer(self._rx_handle, 100)
+            self.ble_handler.gatts_set_buffer(self._tx_handle, 100)
             return True
         else:
             return False
