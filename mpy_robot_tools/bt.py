@@ -11,6 +11,7 @@ from micropython import const, schedule
 import ubluetooth
 
 TARGET_MTU = const(184) # Try to negotiate this packet size for UART
+MAX_NOTIFY = const(100) # Somehow notify with the full mtu is unstable. Memory issue?
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -632,8 +633,8 @@ class UARTPeripheral(BleUARTBase):
         if self.is_connected():
             try:
                 for c in self.connected_centrals:
-                    for i in range(0, len(data), self.ble_handler.mtu):
-                        self.ble_handler.notify(data[i:i+self.ble_handler.mtu], val_handle=self._handle_tx, conn_handle=c)
+                    for i in range(0, len(data), MAX_NOTIFY):
+                        self.ble_handler.notify(data[i:i+MAX_NOTIFY], val_handle=self._handle_tx, conn_handle=c)
                         sleep_ms(10)
             except Exception as e:
                 print("Error writing:", e, data, type(data))
