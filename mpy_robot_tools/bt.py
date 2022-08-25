@@ -1,3 +1,6 @@
+## Warning! This does NOT work on SPIKE Prime firmware. 
+# Flash your SPIKE Prime with MINDSTORMS firmware if you want to use bluetooth.
+
 ## TODO
 ## Fix occasional packet loss on very large notify payloads:
 ## Maybe notify size or delay
@@ -25,12 +28,11 @@ _FLAG_NOTIFY = const(0x0010)
 _FLAG_INDICATE = const(0x0020)
 
 # Initialize constants based on the running device
-spike_prime=False
 if not 'FLAG_INDICATE' in dir(ubluetooth):
     # We're on SPIKE Prime
     # Old version of bluetooth
-    spike_prime=True
-    from math import log2
+    print("WARNING SPIKE Prime not supported for Ble. Use MINDSTORMS Firmware.")
+    raise Exception("Firmware not supported")
 
 _IRQ_GATTS_WRITE = const(3)
 _IRQ_SCAN_RESULT = const(5)
@@ -224,8 +226,6 @@ class BLEHandler:
             # print(*messages) # This is too slow and crashes the process.
 
     def _irq(self, event, data):
-        if spike_prime:
-            event = int(log2(event))
         if event == _IRQ_SCAN_RESULT:
             addr_type, addr, adv_type, rssi, adv_data = data
             name = _decode_name(adv_data) or "?"
