@@ -1,8 +1,8 @@
 #### HOW TO Use this script ####
 # 1. REBOOT your hub first!
 # 2. Paste this script in an empty Python project
-# 3. Run once
-# 4. WAIT!! The play button will stop spinning, but the script is running!
+# 3. Click the 'run/play' button.
+# 4. WAIT FOR THE TEXT TO START SCROLLING IN THE CONSOLE!! The play button will stop spinning, but the script is running!
 # 5. When there is no more text scrolling in the console, the installation is done.
 
 # Works with the LEGO SPIKE app and the LEGO MINDSTORMS app

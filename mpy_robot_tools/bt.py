@@ -25,40 +25,27 @@ _FLAG_NOTIFY = const(0x0010)
 _FLAG_INDICATE = const(0x0020)
 
 # Initialize constants based on the running device
-if 'FLAG_INDICATE' in dir(ubluetooth):
-    # We're on MINDSTORMS Robot Inventor or ESP32
-    # New version of bluetooth
-    _IRQ_GATTS_WRITE = 3
-    _IRQ_SCAN_RESULT = 5
-    _IRQ_SCAN_DONE = 6
-    _IRQ_PERIPHERAL_CONNECT = 7
-    _IRQ_PERIPHERAL_DISCONNECT = 8
-    _IRQ_GATTC_SERVICE_RESULT = 9
-    _IRQ_GATTC_CHARACTERISTIC_RESULT = 11
-    _IRQ_GATTC_READ_RESULT = 15
-    _IRQ_GATTC_NOTIFY = 18
-    _IRQ_GATTC_CHARACTERISTIC_DONE = 12
-    _IRQ_GATTC_SERVICE_DONE = 10
-    _IRQ_GATTC_WRITE_DONE = 17
-    _IRQ_GATTC_READ_DONE = 16
-    _IRQ_MTU_EXCHANGED = 21
-else:
-    # We're probably on SPIKE Prime
-    _IRQ_GATTS_WRITE = 1 << 2
-    _IRQ_SCAN_RESULT = 1 << 4
-    _IRQ_SCAN_DONE = 1 << 5
-    _IRQ_PERIPHERAL_CONNECT = 1 << 6
-    _IRQ_PERIPHERAL_DISCONNECT = 1 << 7
-    _IRQ_GATTC_SERVICE_RESULT = 1 << 8
-    _IRQ_GATTC_CHARACTERISTIC_RESULT = 1 << 9
-    _IRQ_GATTC_READ_RESULT = 1 << 11
-    _IRQ_GATTC_NOTIFY = 1 << 13
-    _IRQ_GATTC_CHARACTERISTIC_DONE = 1 << 12
-    _IRQ_GATTC_SERVICE_DONE = 1 << 9
-    _IRQ_GATTC_WRITE_DONE = 1 << 16
-    _IRQ_GATTC_READ_DONE = 1 << 15
-    _IRQ_MTU_EXCHANGED = 1 << 20
+spike_prime=False
+if not 'FLAG_INDICATE' in dir(ubluetooth):
+    # We're on SPIKE Prime
+    # Old version of bluetooth
+    spike_prime=True
+    from math import log2
 
+_IRQ_GATTS_WRITE = const(3)
+_IRQ_SCAN_RESULT = const(5)
+_IRQ_SCAN_DONE = const(6)
+_IRQ_PERIPHERAL_CONNECT = const(7)
+_IRQ_PERIPHERAL_DISCONNECT = const(8)
+_IRQ_GATTC_SERVICE_RESULT = const(9)
+_IRQ_GATTC_CHARACTERISTIC_RESULT = const(11)
+_IRQ_GATTC_READ_RESULT = const(15)
+_IRQ_GATTC_NOTIFY = const(18)
+_IRQ_GATTC_CHARACTERISTIC_DONE = const(12)
+_IRQ_GATTC_SERVICE_DONE = const(10)
+_IRQ_GATTC_WRITE_DONE = const(17)
+_IRQ_GATTC_READ_DONE = const(16)
+_IRQ_MTU_EXCHANGED = const(21)
 
 
 # Helpers for generating BLE advertising payloads.
@@ -237,6 +224,8 @@ class BLEHandler:
             # print(*messages) # This is too slow and crashes the process.
 
     def _irq(self, event, data):
+        if spike_prime:
+            event = int(log2(event))
         if event == _IRQ_SCAN_RESULT:
             addr_type, addr, adv_type, rssi, adv_data = data
             name = _decode_name(adv_data) or "?"
