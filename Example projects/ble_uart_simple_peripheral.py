@@ -7,21 +7,14 @@
 
 from projects.mpy_robot_tools.bt import UARTPeripheral
 from utime import sleep_ms
-from mindstorms import MSHub
 
-
-mshub = MSHub()
-ser = UARTPeripheral(name="robot", buffered=True)
-while not ser.is_connected():
-    sleep_ms(100)
-
+server = UARTPeripheral(name="server")
+print("Waiting for connection")
 while 1:
-    if ser.is_connected():
-        data = ser.read()
+    if server.is_connected():
+        data = server.readline()
         if data:
-            # Echo the data we got
-            ser.write(data)
-            # Unpack the bytes we got with eval and show the result
-            mshub.light_matrix.write(eval(ser.read()))
-        sleep_ms(100)
-        # ser.buffer = None
+            print(data)
+            server.write(data+b" echo\n")
+    else:
+        sleep_ms(200)

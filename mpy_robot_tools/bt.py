@@ -1,13 +1,27 @@
+## TODO
+## Fix occasional packet loss on very large notify payloads:
+## Maybe notify size or delay
+## Write blog post about ble and uart and the misery.
+## Improve docs and examples.
+## Create SerialTalk example.
+
 import struct
 from utime import sleep_ms
 from micropython import const, schedule
 import ubluetooth
+
+TARGET_MTU = const(184) # Try to negotiate this packet size for UART
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
 
 _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
+_FLAG_READ = const(0x0002)
+_FLAG_WRITE_NO_RESPONSE = const(0x0004)
+_FLAG_WRITE = const(0x0008)
+_FLAG_NOTIFY = const(0x0010)
+_FLAG_INDICATE = const(0x0020)
 
 # Initialize constants based on the running device
 if 'FLAG_INDICATE' in dir(ubluetooth):
@@ -25,6 +39,8 @@ if 'FLAG_INDICATE' in dir(ubluetooth):
     _IRQ_GATTC_CHARACTERISTIC_DONE = 12
     _IRQ_GATTC_SERVICE_DONE = 10
     _IRQ_GATTC_WRITE_DONE = 17
+    _IRQ_GATTC_READ_DONE = 16
+    _IRQ_MTU_EXCHANGED = 21
 else:
     # We're probably on SPIKE Prime
     _IRQ_GATTS_WRITE = 1 << 2
@@ -39,11 +55,10 @@ else:
     _IRQ_GATTC_CHARACTERISTIC_DONE = 1 << 12
     _IRQ_GATTC_SERVICE_DONE = 1 << 9
     _IRQ_GATTC_WRITE_DONE = 1 << 16
+    _IRQ_GATTC_READ_DONE = 1 << 15
+    _IRQ_MTU_EXCHANGED = 1 << 20
 
-_FLAG_READ = const(0x0002)
-_FLAG_WRITE_NO_RESPONSE = const(0x0004)
-_FLAG_WRITE = const(0x0008)
-_FLAG_NOTIFY = const(0x0010)
+
 
 # Helpers for generating BLE advertising payloads.
 # Advertising payloads are repeated packets of the following form:
@@ -69,11 +84,11 @@ _LEGO_SERVICE_UUID = ubluetooth.UUID("00001623-1212-EFDE-1623-785FEABCD123")
 _LEGO_SERVICE_CHAR = ubluetooth.UUID("00001624-1212-EFDE-1623-785FEABCD123")
 _UART_TX = (
     _UART_TX_UUID,
-    _FLAG_NOTIFY,  # | _FLAG_WRITE,
+    _FLAG_NOTIFY | _FLAG_READ, # write is not really needed here.
 )
 _UART_RX = (
     _UART_RX_UUID,
-    _FLAG_WRITE | _FLAG_WRITE_NO_RESPONSE,
+    _FLAG_WRITE | _FLAG_WRITE_NO_RESPONSE, # read should not be needed here.
 )
 _UART_SERVICE = (
     _UART_UUID,
@@ -82,19 +97,18 @@ _UART_SERVICE = (
 
 
 def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
-    """Generate advertising payload.
+    # Generate advertising payload.
 
-    Args:
-        limited_disc (bool): Limited .... . Default value: ``False``.
-        br_edr (bool): B..... . Default value: ``False`.
-        name (str): Name ..... . Default value: ``None`.
-        services (list): List of services ...  Default value: ``None`.
-        appearance (int): .... . Default value: ``False``.
+    # Args:
+    #     limited_disc (bool): Limited .... . Default value: ``False``.
+    #     br_edr (bool): B..... . Default value: ``False`.
+    #     name (str): Name ..... . Default value: ``None`.
+    #     services (list): List of services ...Default value: ``None`.
+    #     appearance (int): .... . Default value: ``False``.
 
-    Returns:
-        An array of bytes with the specified payload.
+    # Returns:
+    #     An array of bytes with the specified payload.
 
-    """
     payload = bytearray()
 
     def _append(adv_type, value):
@@ -128,16 +142,15 @@ def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=N
 
 
 def _decode_field(payload, adv_type):
-    """Decode particular fields from the payload.
+    # Decode particular fields from the payload.
 
-    Args:
-        payload (bytearray): Payload of the message.
-        adv_type (?): Type of the field to decode.
+    # Args:
+    #     payload (bytearray): Payload of the message.
+    #     adv_type (?): Type of the field to decode.
 
-    Returns:
-        An array with the decoded fields.
+    # Returns:
+    #     An array with the decoded fields.
 
-    """
     i = 0
     result = []
     while i + 1 < len(payload):
@@ -148,29 +161,27 @@ def _decode_field(payload, adv_type):
 
 
 def _decode_name(payload):
-    """Decode payload name .
+    # Decode payload name .
 
-        Args:
-            payload (bytearray): Payload of the message.
+    #     Args:
+    #         payload (bytearray): Payload of the message.
 
-        Returns:
-            A string with the name or the payload or the empty string.
+    #     Returns:
+    #         A string with the name or the payload or the empty string.
 
-    """
     n = _decode_field(payload, _ADV_TYPE_NAME)
     return str(n[0], "utf-8") if n else ""
 
 
 def _decode_services(payload):
-    """Decode service ids.
+    # Decode service ids.
 
-            Args:
-                payload (bytearray): Payload of the message.
+    #         Args:
+    #             payload (bytearray): Payload of the message.
 
-            Returns:
-                An array with the `ids` of the available services.
+    #         Returns:
+    #             An array with the `ids` of the available services.
 
-        """
     services = []
     for u in _decode_field(payload, _ADV_TYPE_UUID16_COMPLETE):
         services.append(ubluetooth.UUID(struct.unpack("<h", u)[0]))
@@ -182,18 +193,21 @@ def _decode_services(payload):
 
 
 class BLEHandler:
-    """Basic BT class that can be a central or peripheral or both.
-
+    """Basic Bluetooth Low Energy class that can be a central or peripheral or both.
     The central always connects to a peripheral. The Peripheral just advertises.
+    
+        Args:
+            debug (bool): Keep a log of events in the log property
+            WARNING: Debug log is kept in memory. Long transactions will lead to memory errors!
 
     """
-    def __init__(self, debug=False, buf_size=20):
+    def __init__(self, debug=False):
         self._ble = ubluetooth.BLE()
+        self._ble.config(rxbuf=TARGET_MTU)
         self._ble.active(True)
         self._ble.irq(self._irq)
         self._reset()
         self.debug = debug
-        self.buf_size=buf_size
 
     def _reset(self):
         self._connected_centrals = set()
@@ -202,23 +216,24 @@ class BLEHandler:
         self._write_done_callbacks = {}
         self._conn_callback = None
         self._disconn_callbacks = {}
-        self._central_conn_callback = None  # Used when centrals connect
-        self._central_disconn_callback = None  # Used when centrals disconnect
+        self._central_conn_callback = None# Used when centrals connect
+        self._central_disconn_callback = None# Used when centrals disconnect
         self._char_result_callback = None
-        self._read_callback = None
         self._write_callbacks = {}
         self._notify_callbacks = {}
         self._search_name = None
         self.connecting_uart = False
         self.connecting_lego = False
-        self._read_data = []
-        self._reading = False
+        self._read_data = {}
         self._start_handle = None
         self._end_handle = None
+        self.mtu = 20
+        self.log = ""
 
     def info(self, *messages):
         if self.debug:
-            print(*messages)
+            self.log += str(messages) + "\n"
+            # print(*messages) # This is too slow and crashes the process.
 
     def _irq(self, event, data):
         if event == _IRQ_SCAN_RESULT:
@@ -227,12 +242,10 @@ class BLEHandler:
             services = _decode_services(adv_data)
             self.info("Found: ", name, "with services:", services)
             if self.connecting_uart:
-                # Move this back to base class
-                # Allow for nameless scanning too? Search by services?
                 if name == self._search_name and _UART_UUID in services:
                     # Found a potential device, remember it
                     self._addr_type = addr_type
-                    self._addr = bytes(addr)  # Note: addr buffer is owned by caller so need to copy it.
+                    self._addr = bytes(addr)# Note: addr buffer is owned by caller so need to copy it.
                     # ... and stop scanning. This triggers the IRQ_SCAN_DONE and the on_scan callback.
                     self.stop_scan()
             if self.connecting_lego:
@@ -242,7 +255,6 @@ class BLEHandler:
                     self._adv_type = adv_type
                     self._name = _decode_name(adv_data)
                     self._services = _decode_services(adv_data)
-                    # self._man_data = decode_manufacturer(adv_data)
                     self.stop_scan()
             if self._scan_result_callback:
                 self._scan_result_callback(addr_type, addr, name, services)
@@ -299,6 +311,15 @@ class BLEHandler:
             else:
                 self.info("Failed to find requested gatt service.")
 
+        elif event == _IRQ_MTU_EXCHANGED:
+            # A remote central negotiated a new mtu
+            # Store it to control large transfers
+            # TODO: find out if mtu is conn_handle dependent...
+            # Let's assume it isn't.
+            conn_handle, mtu = data
+            self.mtu = mtu
+            self.info("Mtu:", mtu)
+
         elif event == _IRQ_GATTC_CHARACTERISTIC_RESULT:
             # Connected device returned a characteristic.
             conn_handle, def_handle, value_handle, properties, uuid = data
@@ -312,32 +333,34 @@ class BLEHandler:
             elif self.connecting_lego:
                 if uuid == _LEGO_SERVICE_CHAR:
                     self._lego_value_handle = value_handle
-                    self.connecting_lego = False  # We're done
+                    self.connecting_lego = False# We're done
             if self._char_result_callback:
                 self._char_result_callback(conn_handle, value_handle, uuid)
 
         elif event == _IRQ_GATTC_WRITE_DONE:
+            # This event fires in a central, when it is done writing
+            # to a remote peripheral. 
+            # Call the callback on the value handle that has finished if there is one.
+            # The callback function should check for the value handle.
             conn_handle, value_handle, status = data
-            self.info("TX complete on", conn_handle)
+            self.info("Write done on", conn_handle, "in value", value_handle)
             if conn_handle in self._write_done_callbacks:
                 self._write_done_callbacks[conn_handle](value_handle, status)
 
         elif event == _IRQ_GATTC_NOTIFY:
-            # print("_IRQ_GATTC_NOTIFY") # TODO: Remove
             conn_handle, value_handle, notify_data = data
             notify_data = bytes(notify_data)
+            self.info("Notify:", conn_handle, value_handle, notify_data)
             if conn_handle in self._notify_callbacks:
                 if self._notify_callbacks[conn_handle]:
                     schedule(self._notify_callbacks[conn_handle], notify_data)
 
         elif event == _IRQ_GATTC_READ_RESULT:
-            # A read completed successfully.
-            # print("_IRQ_GATTC_READ_RESULT") # TODO: Remove
+            # A read completed successfully and returns data
             conn_handle, value_handle, char_data = data
-            self._read_data = bytes(char_data)
-            if self._reading == conn_handle: self._reading = False
-            if self._read_callback:
-                self._read_callback(data)
+            char_data = bytes(char_data)
+            self.info("Read:", conn_handle, value_handle, char_data)
+            self._read_data[(value_handle << 12) + conn_handle] = char_data
 
         elif event == _IRQ_CENTRAL_CONNECT:
             conn_handle, addr_type, addr = data
@@ -355,23 +378,23 @@ class BLEHandler:
                 self._central_disconn_callback(conn_handle)
 
         elif event == _IRQ_GATTS_WRITE:
-            # A central has written to the 'value handle' peripheral(?) characteristic.
+            # A client/central has written to a characteristic or descriptor.
             # Get the value and trigger the callback.
-            # TODO: Test if peripherals can also write to centrals or whether they can only indicate.
             conn_handle, value_handle = data
+            value = self._ble.gatts_read(value_handle)
+            self.info("Client/central wrote:", conn_handle, value)
             if value_handle in self._write_callbacks:
                 if self._write_callbacks[value_handle]:
-                    value = self._ble.gatts_read(value_handle)
                     self._write_callbacks[value_handle](value)
 
         else:
-            self.info("Unhandled event, no problem: ", hex(event), "data:", data)
+            self.info("Unhandled event: ", hex(event), "data:", data)
 
     def discover_characteristics(self, args):
         self._ble.gattc_discover_characteristics(*args)
 
     def advertise(self, payload, interval_us=100000):
-        print("Starting advertising")
+        print("Started advertising")
         self._ble.gap_advertise(interval_us, adv_data=payload)
 
     def on_write(self, value_handle, callback):
@@ -388,13 +411,30 @@ class BLEHandler:
             for conn_handle in self._connected_centrals:
                 self._ble.gatts_notify(conn_handle, val_handle, data)
 
-    def register_uart_service(self):
+    def register_uart_service(self, on_write=None, on_connect=None, on_disconnect=None):
         ((handle_tx, handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
-        # set max message size to 100 bytes
-        # self._ble.gatts_write(handle_rx, bytes(100))
-        # bufsize seems to be 20 anyway... do we call this at the wrong moment?
-        self._ble.gatts_set_buffer(handle_rx, 100)
-        self._ble.gatts_set_buffer(handle_tx, 100)
+
+        self.on_write(handle_rx, on_write)
+        self._central_conn_callback = on_connect
+        self._central_disconn_callback = on_disconnect
+
+        # Characteristics and descriptors have a default maximum size of 20 bytes.
+        # Anything written to them by a client will be truncated to this length.
+        # However, any local write will increase the maximum size, so if you want
+        # to allow larger writes from a client to a given characteristic,
+        # use gatts_write after registration.
+
+        # Increase buffer size to fit MTU
+        self._ble.gatts_set_buffer(handle_rx, TARGET_MTU)
+        # self._ble.gatts_set_buffer(handle_tx, 200) #tx is handle with notify. No buffer.
+
+        # Stretch buffer
+        self._ble.gatts_write(handle_rx, bytes(TARGET_MTU))
+        # self._ble.gatts_write(handle_tx, bytes(200))
+
+        # Flush
+        _ = self._ble.gatts_read(handle_rx)
+        # _ = self._ble.gatts_read(handle_tx)
         return handle_tx, handle_rx
 
     # Find a device advertising the uart service.
@@ -404,7 +444,19 @@ class BLEHandler:
     def stop_scan(self):
         self._ble.gap_scan(None)
 
-    def connect_uart(self, name="robot", on_disconnect=None, on_notify=None, time_out=10):
+    def connect_uart(self, name="robot", on_disconnect=None, on_notify=None, on_write_done=None, time_out=10):
+        """ Connect to a BLE Peripheral that advertises with a certain name
+        This method is meant for BLE Centrals
+
+        Args:
+            name (str): Device name to look for
+            on_disconnect (def): Method to call when any side disconnects
+            on_notify (def): Method to call when Peripheral sends notify data.
+            time_out (int): Number of seconds to wait for a connection. 
+        Returns:
+
+        """
+        
         self._search_name = name
         # self.timed_out = False
         self.connecting_uart = True
@@ -424,6 +476,16 @@ class BLEHandler:
         if self._conn_handle:
             self._notify_callbacks[self._conn_handle] = on_notify
             self._disconn_callbacks[self._conn_handle] = on_disconnect
+            self._write_done_callbacks[self._conn_handle] = on_write_done
+
+            # Increase packet size
+            self._ble.config(mtu=TARGET_MTU) 
+            self._ble.gattc_exchange_mtu(self._conn_handle)
+            sleep_ms(60)
+            # Store the result of the mtu negotiation.
+            self.mtu=self._ble.config("mtu")-4 # Some overhead bytes in max msg size.
+
+        self.connecting_uart = False
         return self._conn_handle, self._rx_handle, self._tx_handle
 
     def connect_lego(self, time_out=10):
@@ -440,45 +502,25 @@ class BLEHandler:
             sleep_ms(1000)
             if not self.connecting_lego:
                 break
+        self.connecting_lego = False
         return self._conn_handle
 
     def uart_write(self, value, conn_handle, rx_handle=12, response=False):
-        # if not conn_handle: conn_handle = self._conn_handle
         self._ble.gattc_write(conn_handle, rx_handle, value, 1 if response else 0)
         self.info("GATTC Written ", value)
 
-    def read(self, conn_handle, val_handle, callback=None):
-        self._read_callback = callback
+    def read(self, conn_handle, value_handle):
+        self._read_data[(value_handle << 12) + conn_handle] = b''
         try:
-            self._ble.gattc_read(conn_handle, val_handle)
+            self._ble.gattc_read(conn_handle, value_handle)
         except Exception as e:
             print("gattc_read failed", e)
-
-    def uart_read(self, conn_handle=None):
-        if not conn_handle: conn_handle = self._conn_handle
-        self._reading = conn_handle
-        self.read(conn_handle, self._tx_handle)
-        n = 0
         for i in range(100):
-            if not self._reading:
-                n = i
-                break
-            sleep_ms(4)
-        print("n:", n)
-        return self._read_data
-
-    def lego_read(self, conn_handle=None):
-        if not conn_handle: conn_handle = self._conn_handle
-        self._reading = conn_handle
-        self.read(conn_handle, self._lego_value_handle)
-        n = 0  # TODO Remove 'n', its value is not used
-        for i in range(100):
-            if not self._reading:
-                n = i
-                break
-            sleep_ms(4)
-        # print("n:",n) # TODO Remove
-        return self._read_data
+            result = self._read_data[(value_handle << 12) + conn_handle]
+            if result:
+                return result
+            else:
+                sleep_ms(10)
 
     def lego_write(self, value, conn_handle=None, response=False):
         if not conn_handle: conn_handle = self._conn_handle
@@ -491,8 +533,6 @@ class BLEHandler:
         self._ble.gap_connect(addr_type, addr)
 
     def disconnect(self, conn_handle):
-        if conn_handle in self._write_done_callbacks:
-            del self._write_done_callbacks[conn_handle]
         self._ble.gap_disconnect(conn_handle)
 
     def enable_notify(self, conn_handle, desc_handle, callback=None):
@@ -502,19 +542,21 @@ class BLEHandler:
 
 
 class BleUARTBase:
-    """Base class for ....
+    """Base class with a buffer for UART methods any() and read()
+
+    Args:
+        Buffered (bool): Add to the buffer or overwrite the buffer 
+            when new data arrives. Default: True
 
     """
-    def __init__(self, ble_handler: BLEHandler = None, buffered=True):
-        self.buffered = buffered
-        self.read_buffer = bytearray()
-        if ble_handler is None:
-            ble_handler = BLEHandler()
-        self.ble_handler = ble_handler
+    # TODO: Implement more the UART methods.
 
+    def __init__(self, additive_buffer=True):
+        self.additive_buffer = additive_buffer
+        self.read_buffer = bytearray()
+        
     def _on_rx(self, data):
-        # print("RX!", data)   # TODO: Remove
-        if self.buffered:
+        if self.additive_buffer:
             self.read_buffer += data
         else:
             self.read_buffer = data
@@ -523,36 +565,51 @@ class BleUARTBase:
         return len(self.read_buffer)
 
     def read(self, n=-1):
-        # if not self.buffered:
-        #     result = self.read_buffer
-        #     self.read_buffer = bytearray()
-        #     return result
-        # else:
-            bufsize = len(self.read_buffer)
-            if n < 0 or n > bufsize:
-                n = bufsize
-            data = self.read_buffer[:n]
-            self.read_buffer = self.read_buffer[n:]
-            return data
-    # TODO: Implement readline() and the rest of the UART methods.
+        bufsize = len(self.read_buffer)
+        if n < 0 or n > bufsize:
+            n = bufsize
+        data = self.read_buffer[:n]
+        self.read_buffer = self.read_buffer[n:]
+        return data
+
+    def readline(self):
+        data = bytearray()
+        tries = 0
+        while tries < 50: # 1s timeout
+            c = self.read(1)
+            if c == b'\n':
+                break
+            elif c == b'':
+                if not self.is_connected() : break
+                tries += 1
+                sleep_ms(25)
+            else:
+                tries = 0
+                data += c
+        return data
 
 
 class UARTPeripheral(BleUARTBase):
     """
-    Class for a Nordic UART BLE server/peripheral. 
+    Class for a Nordic UART BLE server/peripheral.
     It will advertise as the given name and populate the UART services and characteristics
     """
-    
-    def __init__(self, name="robot", **kwargs):
-        super().__init__(**kwargs)
+
+    def __init__(self, name="robot", ble_handler: BLEHandler = None, additive_buffer=True):
+        super().__init__(additive_buffer)
         self.name = name
-        self._handle_tx, self._handle_rx = self.ble_handler.register_uart_service()
-        self.ble_handler.on_write(self._handle_rx, self._on_rx)
-        self.ble_handler._central_conn_callback = self._on_connect
-        self.ble_handler._central_disconn_callback = self._on_disconnect
-        # Sets cannot have duplicate items.
-        self.connected_centrals = set()
-        self._on_disconnect(None)
+        if ble_handler is None:
+            ble_handler = BLEHandler()
+        self.ble_handler = ble_handler
+
+        self._handle_tx, self._handle_rx = self.ble_handler.register_uart_service(
+            on_write = self._on_rx, 
+            on_connect = self._on_connect,
+            on_disconnect = self._on_disconnect
+            )
+        
+        self.connected_centrals = set() # Sets cannot have duplicate items.
+        self.ble_handler.advertise(_advertising_payload(name=self.name, services=[_UART_UUID]))
 
     def is_connected(self):
         return len(self.connected_centrals)
@@ -560,33 +617,26 @@ class UARTPeripheral(BleUARTBase):
     def _on_disconnect(self, conn_handle):
         if conn_handle in self.connected_centrals:
             self.connected_centrals.remove(conn_handle)
-        self.buffer = bytearray()
-        # TODO: Check if advertising again is necessary.
-        self.ble_handler.advertise(_advertising_payload(name=self.name, services=[_UART_UUID]))
+        # Flush buffer
+        self.read()
+        # Print debug history
+        if self.ble_handler.log:
+            print(self.ble_handler.log)
+            self.ble_handler.log = ""
 
     def _on_connect(self, conn_handle, addr_type, addr):
         self.connected_centrals.add(conn_handle)
 
     def write(self, data):
-        # Notify central in 'indicate' mode.
-
-        # This is probably not the proper implementation of write.
-        # According to https://docs.micropython.org/en/latest/library/bluetooth.html,
-        # we should write the tx characteristic locally and then
-        # INDICATE to the client/central that there's an update.
-        # Then read from the client
-        # This will probably raise _IRQ_GATTC_READ_DONE = const(16). To test.
-        # If not, send an indicate_done from the client/central?
-        # When READ_DONE is there, check if it was read from the right client
-        # and fill the buffer again.
+        # Notify central of new data.
         if self.is_connected():
             try:
-                # In case this doesn't get a string or bytes.
                 for c in self.connected_centrals:
-                    self.ble_handler.notify(data, val_handle=self._handle_tx, conn_handle=c)
+                    for i in range(0, len(data), self.ble_handler.mtu):
+                        self.ble_handler.notify(data[i:i+self.ble_handler.mtu], val_handle=self._handle_tx, conn_handle=c)
+                        sleep_ms(10)
             except Exception as e:
-                # self.ble_handler.notify(repr(data), self._handle_tx)
-                print(e, data, type(data))
+                print("Error writing:", e, data, type(data))
 
 
 class UARTCentral(BleUARTBase):
@@ -597,14 +647,15 @@ class UARTCentral(BleUARTBase):
     multiple ble handlers. (EALREADY)
 
     """
+    def __init__(self, ble_handler: BLEHandler = None, additive_buffer=True):
+        super().__init__(additive_buffer)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._tx_handle = 9  # None
-        self._rx_handle = 12  # None
-        self._on_disconnect()
-        self.writing = False
+        if ble_handler is None:
+            ble_handler = BLEHandler()
+        self.ble_handler = ble_handler
         
+        self._on_disconnect()
+
     def __del__(self):
         self.disconnect()
 
@@ -612,10 +663,18 @@ class UARTCentral(BleUARTBase):
         # The on_disconnect callback is linked to our conn_handle
         # in _IRQ_PERIPHERAL_DISCONNECT.
         # so no need to check which conn handle it was.
+        # Reset up all properties
         self._conn_handle = None
         self._periph_name = None
+        self._tx_handle = 9 # None
+        self._rx_handle = 12 # None
+        self.writing = False
+        self.reading = False
 
-    def _on_write_done(self, *args):
+    def _on_write_done(self, value_handle, status):
+        # After writing to a server, this is called when writing is done.
+        # Status = 0 when the write was succesful.
+        # Value handle is 65555 something, not the rx_handle. Strange.
         self.writing = False
 
     def connect(self, name="robot"):
@@ -623,16 +682,10 @@ class UARTCentral(BleUARTBase):
         self._conn_handle, self._rx_handle, self._tx_handle = self.ble_handler.connect_uart(
             name,
             on_disconnect=self._on_disconnect,
-            on_notify=self._on_rx
-            )# Blocks until timeout or device with the right name found
-        if self.is_connected():
-            self.ble_handler.on_write_done(self._conn_handle, self._on_write_done)
-            # Not sure if this does something in a central
-            self.ble_handler.gatts_set_buffer(self._rx_handle, 100)
-            self.ble_handler.gatts_set_buffer(self._tx_handle, 100)
-            return True
-        else:
-            return False
+            on_notify=self._on_rx,
+            on_write_done=self._on_write_done
+            ) # Blocks until timeout or device with the right name found
+        return self.is_connected()
 
     def is_connected(self):
         return self._conn_handle is not None
@@ -644,14 +697,79 @@ class UARTCentral(BleUARTBase):
     def write(self, data):
         if self.is_connected():
             try:
-                for i in range(0,len(data),20):
-                    self.ble_handler.uart_write(data[i:i+20], self._conn_handle, self._rx_handle, response=self.buffered)
-                    if self.buffered:
-                        self.writing=True
-                        for i in range(100): #1s timeout
-                            if not self.writing:
-                                break
-                            sleep_ms(10)
-                        self.writing = False
-            except Exception as e:                
-                print("Error writing:", data, type(data), len(data), e)
+                # Chop data in mtu-sizes packages
+                for i in range(0,len(data),self.ble_handler.mtu):
+                    tries = 0
+                    while tries < 50:
+                        if not self.writing: # Only send when writing is done
+                            self.writing = True
+                            partial = data[i:i+self.ble_handler.mtu]
+                            self.ble_handler.uart_write(
+                                partial, 
+                                self._conn_handle, 
+                                self._rx_handle, 
+                                response=True)
+                            break
+                        else:
+                            # Wait some more until writing is done.
+                            tries += 1
+                            sleep_ms(5)
+
+            except Exception as e:
+                print("Error writing:", partial, type(partial), len(partial), e)
+
+    def fast_write(self, data):
+        """ Write to server/peripheral as fast as possible
+        - Data is truncated to mtu
+        - No pause after writing. Writing too often can crash the ble stack. Be careful
+
+        Args:
+            data (str or bytes): Payload to transmit
+        """
+        if self.is_connected():
+            try:
+                self.ble_handler.uart_write(
+                    data[:self.ble_handler.mtu], 
+                    self._conn_handle, 
+                    self._rx_handle, 
+                    response=False)
+
+            except Exception as e:
+                print("Error writing:", e, data)
+
+
+
+## Central/client code here. This just echos whatever clients throw at it.
+
+server = UARTPeripheral(name="server")
+print("Waiting for connection")
+while 1:
+    if server.is_connected():
+        data = server.readline()
+        if data:
+            print(data)
+            server.write(data+b" echo\n")
+    else:
+        sleep_ms(200)
+
+
+## Client
+client = UARTCentral()
+client.connect(name="server")
+
+try:
+    # Send increasingly long messages to test message size
+    for i in range(1, 40):
+        msg = "Hello there!"*(i)
+        client.write(str(len(msg))+" "+msg+"\n")
+        answer = client.readline()
+        print(answer[:10],answer[-10:])
+
+except Exception as e:
+    # Except errors so we can always disconnect
+    # If the ble stack hangs connected, you have to remove
+    # the hub's battery.
+    print(e)
+
+client.disconnect()
+print("Disconnected")
