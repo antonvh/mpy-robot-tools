@@ -465,7 +465,7 @@ class BLEHandler:
             sleep_ms(1000)
             if not self.connecting_uart:
                 break
-        if self._conn_handle:
+        if self._rx_handle:
             self._notify_callbacks[self._conn_handle] = on_notify
             self._disconn_callbacks[self._conn_handle] = on_disconnect
             self._write_done_callbacks[self._conn_handle] = on_write_done
@@ -541,11 +541,11 @@ class BleUARTBase:
             when new data arrives. Default: True
 
     """
-    # TODO: Implement more the UART methods.
+    READS_PER_MS = 10
 
     def __init__(self, additive_buffer=True):
         self.additive_buffer = additive_buffer
-        self.read_buffer = bytearray()
+        self.read_buffer = b''
         
     def _on_rx(self, data):
         if self.additive_buffer:
@@ -565,7 +565,7 @@ class BleUARTBase:
         return data
 
     def readline(self):
-        data = bytearray()
+        data = b''
         tries = 0
         while tries < 50: # 1s timeout
             c = self.read(1)
