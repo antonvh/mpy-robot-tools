@@ -154,6 +154,14 @@ units_px = {
     ],
 }
 
+def matrix_2_image(matrix):
+    return Image(":".join(["".join([str(n) for n in r]) for r in matrix]))
+
+def image_2_matrix(input):
+    if type(input) == Image:
+        input = repr(input)[7:-3]
+    return [[int(c) for c in line] for line in input.split(":")]
+
 def image_99(number):
     error_image = Image("00000:09090:00900:09090:00000")
     try:
@@ -249,21 +257,21 @@ class LMAnimation():
         if not time:
             time = utime.ticks_diff(utime.ticks_ms(), self.start_time)
         if time >= self.next_frame_time:
-            image = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
+            matrix = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
             
             if '__next__' in dir(self.frames):
-                image = next(self.frames)
+                matrix = next(self.frames)
                 self.next_frame_time += self.interval
             else:
                 if len(self.frames[0]) > 2:
-                    image = self.frames[self.current_frame]
+                    matrix = self.frames[self.current_frame]
                     self.next_frame_time += self.interval
                 else:
-                    image = self.frames[self.current_frame][1]
+                    matrix = self.frames[self.current_frame][1]
                     self.next_frame_time += self.frames[self.current_frame][0]
                 self.current_frame += 1
                 if self.current_frame >= len(self.frames):
                     self.current_frame = 0
 
-            display.show(Image(":".join(["".join([str(n) for n in r]) for r in image])))
+            display.show(matrix_2_image(matrix))
             

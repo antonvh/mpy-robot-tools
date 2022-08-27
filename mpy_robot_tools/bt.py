@@ -16,8 +16,7 @@ import ubluetooth
 TARGET_MTU = const(184) # Try to negotiate this packet size for UART
 MAX_NOTIFY = const(100) # Somehow notify with the full mtu is unstable. Memory issue?
 
-_IRQ_CENTRAL_CONNECT = const(1)
-_IRQ_CENTRAL_DISCONNECT = const(2)
+
 
 _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
@@ -34,6 +33,8 @@ if not 'FLAG_INDICATE' in dir(ubluetooth):
     print("WARNING SPIKE Prime not supported for Ble. Use MINDSTORMS Firmware.")
     raise Exception("Firmware not supported")
 
+_IRQ_CENTRAL_CONNECT = const(1)
+_IRQ_CENTRAL_DISCONNECT = const(2)
 _IRQ_GATTS_WRITE = const(3)
 _IRQ_SCAN_RESULT = const(5)
 _IRQ_SCAN_DONE = const(6)
@@ -576,7 +577,10 @@ class BleUARTBase:
             else:
                 tries = 0
                 data += c
-        return data
+        return data.decode("UTF")
+
+    def writeline(self, data: str):
+        self.write(data+"\n")
 
 
 class UARTPeripheral(BleUARTBase):
