@@ -13,21 +13,12 @@ client.connect(name="server")
 
 mycodelines = codelines()
 
-
-try:
-    # Send images across in string format
-    while not button.left.is_pressed() or button.center.is_pressed():
-        image_matrix = next(mycodelines)
-        image = matrix_2_image(image_matrix)
-        display.show(image)
-        client.writeline( repr(image) )
-        sleep_ms(100)
-
-except Exception as e:
-    # Except errors so we can always disconnect after a programming mistake
-    # If the ble stack hangs connected, you have to remove
-    # the hub's battery.
-    print(e)
+while True:
+    image_matrix = next(mycodelines)
+    image = matrix_2_image(image_matrix)
+    display.show(image)
+    client.writeline( repr(image) )
+    sleep_ms(100)
 
 client.disconnect()
 print("Disconnected")

@@ -196,9 +196,10 @@ class BLEHandler:
         self._ble = ubluetooth.BLE()
         self._ble.config(rxbuf=TARGET_MTU)
         self._ble.active(True)
+        self._ble.gap_disconnect(1025) # Disconnect in case of previous crash
         self._ble.irq(self._irq)
-        self._reset()
         self.debug = debug
+        self._reset()
 
     def _reset(self):
         self._connected_centrals = set()
