@@ -225,7 +225,7 @@ class MSHubControl:
     def run(self, speed):
         self.motor.run_at_speed(self._angular_2_pct_speed(speed))
 
-    def run_time(self, speed, time, wait):
+    def run_time(self, speed, time, wait=True):
         if wait:
             self.run(speed)
             sleep(time / 1000)
@@ -237,14 +237,14 @@ class MSHubControl:
                 callback=lambda x: self.motor.dc(0))
             self.run(speed)
 
-    def run_angle(self, speed, rotation_angle, wait):
+    def run_angle(self, speed, rotation_angle, wait=True):
         self.motor.run_for_degrees(rotation_angle, self._angular_2_pct_speed(speed))
         if wait:
             sleep(0.05)
             while not self.done():
                 sleep(0.015)
 
-    def run_target(self, speed, target_angle, wait):
+    def run_target(self, speed, target_angle, wait=True):
         self.motor.run_to_position(target_angle, self._angular_2_pct_speed(speed))
         if wait:
             sleep(0.05)
@@ -286,6 +286,14 @@ class MSHubControl:
 class MotorStub:
     __angle = 0
     __dc = 0
+    __speed = 0
+    __busy = False
+
+    def __init__(self) -> None:
+        self.timer = Timer()
+
+    def run(self, speed):
+        self.__speed = speed
 
     def dc(self, n):
         self.__dc = n
@@ -294,7 +302,7 @@ class MotorStub:
         return self.__angle
 
     def speed(self):
-        return 0
+        return self.__speed
 
     def reset_angle(self, *args):
         if args:
@@ -305,10 +313,31 @@ class MotorStub:
     def track_target(self, t, **kwargs):
         self.__angle = round(t)
 
-    @staticmethod
-    def done():
-        return True
+    def done(self):
+        return not self.__busy
 
-    @staticmethod
-    def stop():
-        pass
+    def stop(self):
+        self.__speed = 0
+        self.__busy = False
+
+    def run_time(self, speed, time, wait=True):
+        self.__speed = speed
+        self.__busy = True
+        if wait:
+            sleep(time/1000)
+            self.stop()
+        else:
+            self.timer.init(
+                mode=Timer.ONE_SHOT,
+                period=time,
+                callback=lambda x: self.stop())
+        self.__angle += round( speed * time/1000 )
+
+    def run_angle(self, speed, rotation_angle, wait=True):
+        self.run_time(speed, rotation_angle/speed*1000, wait)
+
+    def run_target(self, speed, target_angle, wait=True):
+        self.run_angle(speed, target_angle - self.__angle, wait)
+
+    def abs_angle(self):
+        return self.__angle % 360
