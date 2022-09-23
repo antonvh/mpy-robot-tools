@@ -24,7 +24,7 @@ encoded = []
 for f in files:
     out_file = f.split(".")[0] + ".mpy"
     out_file_loc = MPY_LIB + out_file
-    mpy_cross.run('-march=armv6', LIB + f, '-o', out_file_loc)
+    mpy_cross.run('-march=armv6','-O3', LIB + f, '-o', out_file_loc)
     time.sleep(0.5)
     with open(out_file_loc, 'rb') as mpy_file:
         file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
