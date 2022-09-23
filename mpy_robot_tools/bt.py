@@ -462,6 +462,8 @@ class BLEHandler:
         self.scan()
         for i in range(time_out):
             print("Connecting to UART Peripheral:", name)
+            if self.debug:
+                print(self.log)
             sleep_ms(1000)
             if not self.connecting_uart:
                 break
@@ -548,10 +550,11 @@ class BleUARTBase:
         self.read_buffer = b''
         
     def _on_rx(self, data):
-        if self.additive_buffer:
-            self.read_buffer += data
-        else:
-            self.read_buffer = data
+        if data:
+            if self.additive_buffer:
+                self.read_buffer += data
+            else:
+                self.read_buffer = data
 
     def any(self):
         return len(self.read_buffer)

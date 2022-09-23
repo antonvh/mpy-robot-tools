@@ -41,8 +41,8 @@ class RCReceiver(UARTPeripheral):
     def __init__(self, **kwargs):
         self.set_logo("00000:05550:05950:05550:00000")
         # The super init also calls on disconnect.
-        super().__init__(buffered=False, **kwargs)
-        self.buffer = bytearray(struct.calcsize("bbbbBBhhB"))
+        super().__init__(additive_buffer=False, **kwargs)
+        self.read_buffer = bytearray(struct.calcsize("bbbbBBhhB"))
 
     def _on_disconnect(self, *data):
         display.show(self._CONNECT_ANIMATION, delay=100, wait=False, loop=True)
@@ -75,7 +75,7 @@ class RCReceiver(UARTPeripheral):
 
     def controller_state(self, *indices):
         try:
-            controller_state = struct.unpack("bbbbBBhhB", self.buffer)
+            controller_state = struct.unpack("bbbbBBhhB", self.read_buffer)
         except:
             controller_state = [0]*9
         if indices:
@@ -113,4 +113,4 @@ class RCTransmitter(UARTCentral):
     # Send data over the UART
     def transmit(self):
         value = struct.pack("bbbbBBhhB", *self.controller_state)
-        self.write(value)
+        self.fast_write(value)
