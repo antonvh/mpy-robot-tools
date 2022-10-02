@@ -7,10 +7,10 @@
 # https://antonsmindstorms.com/product/robot-snake-with-multiple-51515-inventor-sets/
 
 
-from hub import port, Image, display
-from projects.mpy_robot_tools.bt import UARTPeripheral, CONNECT_IMAGES
+from hub import port, display
+from projects.mpy_robot_tools.bt import UARTPeripheral
+from projects.mpy_robot_tools.light import CONNECT_IMAGES, image_99
 from projects.mpy_robot_tools.motor_sync import Mechanism, sine_wave
-from projects.mpy_robot_tools.light_matrix import image_99
 
 # Change the SEGMENT number before downloading !!
 SEGMENT = 1
@@ -18,7 +18,7 @@ LOGO = image_99(50+SEGMENT) # 5 looks like an S.
 CONNECT_ANIMATION = [LOGO + img for img in CONNECT_IMAGES]
 
 # Create link to the snake head, and advertise self as snakesN where N is the segment number.
-head_link = UARTPeripheral(name="snakes"+str(SEGMENT), buffered=False)
+head_link = UARTPeripheral(name="snakes"+str(SEGMENT), additive_buffer=False)
 
 motors = [
     port.C.motor,
