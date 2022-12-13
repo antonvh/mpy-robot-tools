@@ -30,3 +30,8 @@ class port():
     D = Device()
     E = Device()
     F = Device()
+
+class sound():
+    @staticmethod
+    def beep(*args):
+        pass

@@ -11,6 +11,16 @@ except:
 def clamp_int(n, floor=-100, ceiling=100):
     return max(min(round(n), ceiling), floor)
 
+def wait(duration_ms):
+    sleep(duration_ms/1000)
+
+class Port():
+    A = "A"
+    B = "B"
+    C = "C"
+    D = "D"
+    E = "E"
+    F = "F"
 
 def track_target(motor, target=0, gain=1.5):
     """Track target ??.
@@ -191,6 +201,9 @@ class PBMotor:
         """
         self.control.run_target(speed, target_angle, wait)
 
+    def run_until_stalled(self, *args, **kwargs):
+        self.control.run_until_stalled(*args, **kwargs)
+
     def speed(self):
         return self.control.speed()
 
@@ -251,6 +264,16 @@ class MSHubControl:
             while not self.done():
                 sleep(0.015)
 
+    def run_until_stalled(self, speed, duty_limit=100):
+        if duty_limit < 100:
+            self.dc(duty_limit * speed/speed)
+        else:
+            self.run(speed)
+        wait(200)
+        while self.speed() < -2 or self.speed() > 2:
+            wait(10)
+        self.dc(0)
+
     def done(self):
         return self.motor.get()[3] == 0
 
@@ -300,6 +323,9 @@ class MotorStub:
 
     def angle(self):
         return self.__angle
+
+    def run_until_stalled(self, *args):
+        pass
 
     def speed(self):
         return self.__speed
