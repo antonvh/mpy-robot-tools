@@ -1,1 +1,1 @@
-../Submodules/UartRemote/MicroPython/uartremote.py
+../Submodules/SerialTalk/uartremote.py

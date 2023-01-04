@@ -11,17 +11,19 @@ import os
 import time
 from functools import partial
 
-LIB = '../mpy_robot_tools/'
-MPY_LIB = 'mpy/'
-INSTALLER = 'install_mpy_robot_tools.py'
-BASE_SCRIPT = 'base_script.py'
+SCRIPT_DIR = os.path.dirname(__file__)
+LIB = os.path.dirname(SCRIPT_DIR)+'/mpy_robot_tools/'
+MPY_LIB = SCRIPT_DIR+'/mpy/'
+INSTALLER = SCRIPT_DIR+'/install_mpy_robot_tools.py'
+BASE_SCRIPT = SCRIPT_DIR+'/base_script.py'
 SKIP_FILES = ['__pycache__', 'servo.py', 'hub_stub.py', 'np_animation.py']
 CHUNK_SIZE = 2 ** 8
 
 files = [f for f in os.listdir(LIB) if f not in SKIP_FILES]
 encoded = []
 
-for f in files:
+def compile(f):
+    global encoded
     out_file = f.split(".")[0] + ".mpy"
     out_file_loc = MPY_LIB + out_file
     mpy_cross.run('-march=armv6','-O3', LIB + f, '-o', out_file_loc)
@@ -38,6 +40,29 @@ for f in files:
         tuple(chunks),
         file_hash
     )]
+
+
+for f in files:
+    abspath = os.path.join(LIB, f)
+    # t = os.path.isdir(j)
+    if os.path.isdir(abspath):
+        try:
+            os.mkdir(os.path.join(MPY_LIB,f))
+        except:
+            pass
+            # Dir probably already exists
+            
+        encoded += [(
+            f,
+            "dir",
+            ""
+        )]
+        subfiles = [f for f in os.listdir(abspath) if f not in SKIP_FILES]
+        for sf in subfiles:
+            compile(os.path.join(f, sf))
+    else:
+        compile(f)
+        
 
 spike_code = open(BASE_SCRIPT, 'r').read()
 

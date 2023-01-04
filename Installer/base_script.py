@@ -27,25 +27,34 @@ except:
 for file, code, hash_gen in encoded:
     print("Writing file ", file)
     target_loc = '/projects/mpy_robot_tools/' + file
+    if code == "dir":
+        try:
+            mkdir(target_loc)
+        except:
+            pass
+            # Directory probably exists
 
-    print('writing ' + file + ' to folder /projects/mpy_robot_tools')
-    with open(target_loc, 'wb') as f:
-        for chunk in code:
-            f.write(a2b_base64(chunk))
-    del code
+    else: 
+        print('writing ' + file + ' to folder /projects/mpy_robot_tools')
+        with open(target_loc, 'wb') as f:
+            for chunk in code:
+                f.write(a2b_base64(chunk))
+        del code
 
-    try:
-        print('Finished writing ' + file + ', Checking hash.')
-        result = open(target_loc, 'rb').read()
-        hash_check = calc_hash(result)
+        try:
+            print('Finished writing ' + file + ', Checking hash.')
+            result = open(target_loc, 'rb').read()
+            hash_check = calc_hash(result)
 
-        print('Hash generated: ', hash_gen)
+            print('Hash generated: ', hash_gen)
 
-        if hash_check != hash_gen:
-            print('Failed hash of .mpy on the robot: ' + hash_check)
-            error = True
-    except Exception as e:
-        print(e)
+            if hash_check != hash_gen:
+                print('Failed hash of .mpy on the robot: ' + hash_check)
+                error = True
+        except Exception as e:
+            print(e)
+
+del(encoded)
 
 if not error:
     print('Library written successfully. Enjoy!')
