@@ -173,13 +173,13 @@ def keyframes(frames):
         return result
     return func
 
-def keyframes_dict(frames_dict, key="animation"):
+def keyframes_dict(frames_dict, name="animation"):
     for k in frames_dict:
         frames_dict[k].reverse()
     def func(time, **kwargs):
         result = [OFF]
-        if key in kwargs:
-            anim_key = kwargs[key]
+        if name in kwargs:
+            anim_key = kwargs[name]
             if anim_key in frames_dict:
                 frames = frames_dict[anim_key]
                 period = frames[0][0]
