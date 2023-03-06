@@ -36,8 +36,8 @@ rcv = RCReceiver(ble_handler=ble)
 ## Connect to a technic hub
 # Let the hub think that the ESP board is a train motor
 # by driving the Tx pin (ID2, lead 6) low
-tx = Pin(19, Pin.OUT, value=0) 
-# rx = Pin(18, Pin.OUT, Pin.PULL_UP, value=1) # optionally drive rx up.
+tx = Pin(18, Pin.OUT, value=0) 
+# rx = Pin(19, Pin.OUT, Pin.PULL_UP, value=1) # optionally drive rx up.
 
 offroader=SmartHub(ble_handler=ble)
 offroader.connect()
