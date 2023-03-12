@@ -296,14 +296,18 @@ class MSHubControl:
                 sleep(0.015)
 
     def run_until_stalled(self, speed, duty_limit=100):
-        if duty_limit  is not 100:
-            self.dc(duty_limit * speed/speed)
-        else:
-            self.run(speed)
-        wait(200)
-        while self.speed() < -2 or self.speed() > 2:
+        duty_limit = abs(duty_limit)
+        self.run(speed)
+        wait(100)
+        while 1:
+            speed_pct, rel_pos, abs_pos, pwm = self.motor.get()
+            if speed_pct == 0:
+                break
+            if abs(pwm) > duty_limit:
+                break
             wait(10)
         self.dc(0)
+        return rel_pos
 
     def done(self):
         return self.motor.get()[3] == 0 # or self.motor.get()[0] == 0
@@ -454,3 +458,4 @@ class DriveBase():
             self.straight_speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration = args
         else: 
             return self.straight_speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration
+
