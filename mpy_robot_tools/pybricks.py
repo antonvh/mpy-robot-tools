@@ -73,6 +73,7 @@ def scale(val, src, dst):
 class ForceSensor:
     def __init__(self, sensor_port):
         self.sensor = eval("port." + sensor_port + ".device")
+        _ = self.force() # Try the sensor
 
     def force(self):
         return self.sensor.get()[0]
@@ -93,6 +94,7 @@ class UltrasonicSensor:
         """
         self.sensor = eval("port." + sensor_port + ".device")
         self.lights = USLights(self.sensor)
+        _ = self.distance() # Test sensor
 
     def distance(self):
         """Measures the distance between the sensor and an object using ultrasonic sound waves.
