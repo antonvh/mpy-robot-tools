@@ -289,7 +289,7 @@ class MSHubControl:
 
     def run_target(self, speed, target_angle, wait=True):
         # run_top_position ignores sign on speed, and only looks at angle for direction
-        self.motor.run_to_position(target_angle*self.DIRECTION, self._angular_2_pct_speed(speed))
+        self.motor.run_to_position(round(target_angle*self.DIRECTION), self._angular_2_pct_speed(speed))
         if wait:
             sleep(0.05)
             while not self.done():
