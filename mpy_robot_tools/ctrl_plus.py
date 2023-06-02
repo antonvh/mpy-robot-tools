@@ -2,7 +2,6 @@ from .bt import BLEHandler
 from micropython import const
 from time import sleep_ms
 import struct
-from .helpers import clamp_int
 
 __HUB_NOTIFY_DESC = const(0x0F)
 __REMOTE_NOTIFY_DESC = const(0x0C)
@@ -27,6 +26,9 @@ YELLOW = const(7)
 ORANGE = const(8)
 RED = const(9)
 WHITE = const(10)
+
+def clamp_int(n, floor=-100, ceiling=100):
+    return max(min(round(n), ceiling), floor)
 
 class SmartHub():
     __PORTS = {

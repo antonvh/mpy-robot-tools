@@ -1,7 +1,7 @@
 
 import math
 from utime import sleep_ms, ticks_ms, ticks_diff
-from .helpers import PBMotor
+from .pybricks import Motor as PBMotor
 
 ### These meta-functions return functions for use inside the mechanism class ###
 def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time_offset=0, smoothing=0.0):
