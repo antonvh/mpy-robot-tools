@@ -20,10 +20,10 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     - time_offset: offset the first values in the keyframes by this number
     - smoothing: Increase up to 1.0 for maximum cosine smoothing. This is sometimes called 'easing'
 
-    Example:
-    my_function = linear_interpolation([(0,0), (1000,360), (2000,0)])
-    my_function(500)  # returns 180.
-    my_function(2500) # Also returns 180, because of wrapping.
+    Example::
+        my_function = linear_interpolation([(0,0), (1000,360), (2000,0)])
+        my_function(500)  # returns 180.
+        my_function(2500) # Also returns 180, because of wrapping.
     """
     # Sort by timecodes (x's), just to be sure.
     points.sort(key = lambda point: point[0])
@@ -128,10 +128,7 @@ class AMHTimer():
     You can even run it in reverse, so you can count down until 0.
     It always returns integers, even when you slow it way down.
 
-    Author: 
-        Anton's Mindstorms Hacks - https://antonsmindstorms.com
-
-    Usage:
+    :Usage::
         my_timer = AMHTimer():
         my_timer.rate = 500  # set the rate to 500 ticks/s. That is half the normal rate
         my_timer.acceleration = 100  # Increase the rate by 100 ticks / second squared
@@ -215,31 +212,31 @@ class AMHTimer():
 
 ### This is the central mechanism class that animates the robot ###
 class Mechanism():
+    """The class helps to control multiple motors in a tight loop python program.
+
+        :param motors: list of motor objects. Can be hub.port.X.motor or Motor('X')
+        :type motors: list
+        :param motor_functions: list of functions that take time (ticks) argument and calculate motor positions
+        :type motor_functions: list of func
+        :param reset_zero: resets the 0 point of the relative encoder to the absolute encoder position, defaults to True
+        :type reset_zero: bool, optional
+        :param Kp: proportional feedback factor for motor power, defaults to 1.2
+        :type Kp: float, optional
+
+        :Usage:
+
+        .. code-block:: python
+
+            my_mechanism = Mechanism([Motor('A'), Motor('B')], [func_a, func_b])
+            timer = AMHTimer()
+            while True:
+                my_mechanism.update_motor_pwms(timer.time)
+        
+        
     """
-    The class helps to control multiple motors in a tight loop python program.
 
-    Author:
-        Anton's Mindstorms Hacks - https://antonsmindstorms.com
-
-    Args:
-        motors: list of motor objects. Can be hub.port.X.motor or Motor('X')
-        motor_functions: list of functions that take one argument and calculate motor positions
-
-    Optional Args:
-        reset_zero: bolean, resets the 0 point of the relative encoder to the absolute encoder position
-        ramp_pwm: int, a number to limit maximum pwm per tick when starting. 0.5 is a good value for a slow ramp.
-        Kp: float, proportional feedback factor for motor power.
-
-    Returns:
-        None.
-
-    Usage:
-        my_mechanism = Mechanism([Motor('A'), Motor('B')], [func_a, func_b])
-        timer = AMHTimer()
-        while True:
-            my_mechanism.update_motor_pwms(timer.time)
-    """
     def __init__(self, motors, motor_functions, reset_zero=True, Kp=1.2):
+        
         # Allow for both hub.port.X.motor and Motor('X') objects:
         self.motors = [m if type(m)==PBMotor else PBMotor(m) for m in motors]
         self.motor_functions = motor_functions

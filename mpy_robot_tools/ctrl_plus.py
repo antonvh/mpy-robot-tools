@@ -1,7 +1,14 @@
-from .bt import BLEHandler
-from micropython import const
-from time import sleep_ms
 import struct
+try:
+    from .bt import BLEHandler
+    from micropython import const
+    from time import sleep_ms
+except:
+    def const(x):
+        return x
+    def sleep_ms(x):
+        pass
+    print("Import failed. Not on micropython?")
 
 __HUB_NOTIFY_DESC = const(0x0F)
 __REMOTE_NOTIFY_DESC = const(0x0C)

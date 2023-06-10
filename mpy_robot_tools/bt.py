@@ -18,20 +18,26 @@
 # and to pass that reference to schedule().
 # This is discussed in detail here reference documentation under “Creation of Python objects”.
 
-from utime import sleep_ms, ticks_diff, ticks_ms
-from micropython import const, schedule, alloc_emergency_exception_buf
-import ubluetooth
-import struct
+try:
+    from utime import sleep_ms, ticks_diff, ticks_ms
+    from micropython import const, schedule, alloc_emergency_exception_buf
+    import ubluetooth
+    import struct
 
-alloc_emergency_exception_buf(100)
+    alloc_emergency_exception_buf(100)
 
 
-# Initialize constants based on the running device
-if not 'FLAG_INDICATE' in dir(ubluetooth):
-    # We're on SPIKE Prime
-    # Old version of bluetooth
-    print("WARNING SPIKE Prime not supported for Ble. Use MINDSTORMS Firmware.")
-    raise Exception("Firmware not supported")
+    # Initialize constants based on the running device
+    if not 'FLAG_INDICATE' in dir(ubluetooth):
+        # We're on SPIKE Prime
+        # Old version of bluetooth
+        print("WARNING SPIKE Prime not supported for Ble. Use MINDSTORMS Firmware.")
+        raise Exception("Firmware not supported")
+except:
+    class ubluetooth():
+        def UUID(_):
+            pass
+    print("Import failed. Not on micropython?")
 
 TARGET_MTU = const(184) # Try to negotiate this packet size for UART
 MAX_NOTIFY = const(100) # Somehow notify with the full mtu is unstable. Memory issue?

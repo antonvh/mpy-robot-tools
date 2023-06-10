@@ -177,10 +177,12 @@ class Motor:
     def reset_angle(self, *args):
         """Reset motor's angle.
 
-        Args:
-            *args (optional): Pass 0 to set current position to zero. Without arguments this resets to the absolute
+        :param angle: Pass 0 to set current position to zero. Without arguments this resets to the absolute
             encoder position
+        :type angle: int
+
         """
+        
         self.control.reset_angle(*args)
 
     def track_target(self, *args, **kwargs):

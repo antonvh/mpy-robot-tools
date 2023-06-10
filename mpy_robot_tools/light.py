@@ -177,15 +177,25 @@ units_px = {
     ],
 }
 
+
 def matrix_2_image(matrix):
     return Image(":".join(["".join([str(n) for n in r]) for r in matrix]))
+
 
 def image_2_matrix(input):
     if type(input) == Image:
         input = repr(input)[7:-3]
     return [[int(c) for c in line] for line in input.split(":")]
 
+
 def image_99(number):
+    """Generates 5x5 matrix images for numbers up to 99
+
+    :param number: number between 0 and 99
+    :type number: integer
+    :return: SPIKE2 and MINDSTORMS api type Image
+    :rtype: hub.Image
+    """
     error_image = Image("00000:09090:00900:09090:00000")
     try:
         if not 0 <= number <= 99:
@@ -207,14 +217,22 @@ def image_99(number):
     result_str = ":".join(["".join([str(n) for n in r]) for r in result_px])
     return Image(result_str)
 
+
 def codelines():
     """
     Generator for Tars-style codelines, as seen in insterstellar
-    usage:
+    usage::
+    
         mycodelines = codelines()
         image_matrix = next(mycodelines)
     """
-    display = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
+    display = [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+    ]
     yield display
 
     current_line = 0
@@ -243,46 +261,68 @@ def codelines():
         delete_a_line = 1
         while delete_a_line:
             display.pop(0)
-            display += [[0,0,0,0,0]]
-            if current_line > 0: current_line -= 1
+            display += [[0, 0, 0, 0, 0]]
+            if current_line > 0:
+                current_line -= 1
             yield display
             delete_a_line = randrange(2)
 
-class LMAnimation():
+
+class LMAnimation:
     """
     Class for showing animations in your python script
     frames: can be a generator or list of 5x5 matrices.
     Frames can even be tuples of a frame duration and a 5x5 matrix.
+
     usage:
+
+    .. code-block:: python
+
         animation = LMAnimation(my_frame_list)
 
         while True:
             animation.update_display()
 
-    Note that the hub can also animate using the code below
-    It wil not be synchronized to a timer, but you won't have to update it
+    Note that the hub can also animate using the code below.
+    It wil not be synchronized to a timer, but you don't have to worry 
+    about it in a control loop
 
-    from hub import display, Image
-    IMG_1 = Image("00000:09000:09000:09000:00000")
-    IMG_2 = Image("00000:00900:00900:00900:00000")
-    IMG_3 = Image("00000:00090:00090:00090:00000")
-    ANIMATION = [IMG_1, IMG_2, IMG_3]
-    display.show(ANIMATION, delay=100, wait=False, loop=True)
+    .. code-block:: python
+
+        from hub import display, Image
+        IMG_1 = Image("00000:09000:09000:09000:00000")
+        IMG_2 = Image("00000:00900:00900:00900:00000")
+        IMG_3 = Image("00000:00090:00090:00090:00000")
+        ANIMATION = [IMG_1, IMG_2, IMG_3]
+        display.show(ANIMATION, delay=100, wait=False, loop=True)
     """
+
     def __init__(self, frames, fps=12):
         self.frames = frames
-        self.interval = int(1000/fps)
+        self.interval = int(1000 / fps)
         self.start_time = utime.ticks_ms()
         self.next_frame_time = 0
         self.current_frame = 0
 
     def update_display(self, time=None):
+        """Call this method in a tight loop to update the hub display
+        with the animation loaded at init. 
+
+        :param time: pass a time in miliseconds, when None (default) it uses ticks_ms() since instantiation.
+        :type time: int, optional
+        """
         if not time:
             time = utime.ticks_diff(utime.ticks_ms(), self.start_time)
         if time >= self.next_frame_time:
-            matrix = [[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0],[0,0,0,0,0]]
-            
-            if '__next__' in dir(self.frames):
+            matrix = [
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+                [0, 0, 0, 0, 0],
+            ]
+
+            if "__next__" in dir(self.frames):
                 matrix = next(self.frames)
                 self.next_frame_time += self.interval
             else:
@@ -297,4 +337,3 @@ class LMAnimation():
                     self.current_frame = 0
 
             display.show(matrix_2_image(matrix))
-            
