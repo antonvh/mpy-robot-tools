@@ -1,6 +1,17 @@
-# This library contains polyfills for pybricks classes and methods
-# It allows you to program the SPIKE or MINDSTORMS hub more or less
-# Pybricks-style without installing pybricks.
+#!/usr/bin/env micropython
+"""Provides a Pybricks-like API for SPIKE2 and LEGO MINDSTORMS Robot Inventor.
+
+Motors are initialized with their relative encoder zeroed to their absolute zero.
+You can use SI units to control motors and sensors.
+Motors can run in the background with wait=False
+
+"""
+__author__ = "Anton Vanhoucke"
+__copyright__ = "Copyright 2023, Antons Mindstorms"
+__credits__ = ["Pybricks.com"]
+__license__ = "MIT"
+__version__ = "1.0.0"
+__status__ = "Production"
 
 from machine import Timer
 from time import sleep
@@ -12,12 +23,31 @@ except:
 
 
 def clamp_int(n, floor=-100, ceiling=100):
+    """Limits input number to the range of -100, 100
+    and returns an integer
+
+    :param n: input number
+    :type n: int or floar
+    :param floor: lowest limit >= , defaults to -100
+    :type floor: int, optional
+    :param ceiling: highest limit <=, defaults to 100
+    :type ceiling: int, optional
+    :return: clamped number
+    :rtype: int
+    """
     return max(min(round(n), ceiling), floor)
 
 def wait(duration_ms):
+    """Sleep in miliseconds.
+
+    :param duration_ms: duration (ms)
+    :type duration_ms: int or float
+    """
     sleep(duration_ms/1000)
 
 class Port():
+    """Enumerator for Port names
+    """
     A = "A"
     B = "B"
     C = "C"
@@ -26,31 +56,17 @@ class Port():
     F = "F"
 
 class Direction():
+    """Enumerator for Directions
+    """
     CLOCKWISE = 1
     COUNTERCLOCKWISE = -1
 
 class Stop():
+    """Enumerator for Stop modes
+    """
     BRAKE = 0
     COAST = 1
     HOLD = 2
-
-def track_target(motor, target=0, gain=1.5):
-    """Track target ??.
-
-    Args:
-        motor (Motor): ....
-        target (int): ....
-        gain (float): ...
-
-    Return:
-        The current position of the motor.
-
-    """
-    m_pos = motor.get()[1]
-    motor.pwm(
-        clamp_int((m_pos - target) * -gain)
-    )
-    return m_pos
 
 
 def scale(val, src, dst):
@@ -186,6 +202,14 @@ class Motor:
         self.control.reset_angle(*args)
 
     def track_target(self, *args, **kwargs):
+        """Call this method in closed loop to ensure a motor
+        moves to this angle target. 
+
+        :param target: target angle, defaults to 0
+        :type target: int, optional
+        :param gain: motor power proportional to error, defaults to 1.5
+        :type gain: float, optional
+        """
         self.control.track_target(*args, **kwargs)
 
     def run(self, speed):
@@ -230,7 +254,7 @@ class Motor:
         self.control.run_target(speed, target_angle, wait)
 
     def run_until_stalled(self, *args, **kwargs):
-        self.control.run_until_stalled(*args, **kwargs)
+        return self.control.run_until_stalled(*args, **kwargs)
 
     def speed(self):
         return self.control.speed()
@@ -321,13 +345,17 @@ class MSHubControl:
 
     def reset_angle(self, *args):
         if len(args) == 0:
-            absolute_position = self.motor.get()[2]
-            if absolute_position > 180:
-                absolute_position -= 360
-            self.motor.preset(absolute_position)
+            abs_pos = self.motor.get()[2]
+            if abs_pos > 180:
+                abs_pos -= 360
+            tgt = abs_pos
         else:
-            self.motor.preset(args[0])
-
+            tgt = args[0]
+        # Ensure angle is set
+        while not self.motor.get()[1] == tgt:
+            self.motor.preset(tgt)
+            wait(10)
+         
     def angle(self):
         return self.motor.get()[1]  * self.DIRECTION
 
@@ -342,8 +370,10 @@ class MSHubControl:
             mode=Timer.ONE_SHOT,
             period=500,
             callback=lambda x: self.motor.run_to_position(round(target), 100))
-        track_target(self.motor, target, gain)
-
+        m_pos = self.motor.get()[1]
+        self.motor.pwm(
+            clamp_int((m_pos - target) * -gain)
+        )
 
 class MotorStub:
     __angle = 0

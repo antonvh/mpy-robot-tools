@@ -1,7 +1,6 @@
 # Import from pybricks because I moved these classes there
 # This ensures backward compatibility
-from .pybricks import (clamp_int, wait, track_target,
-                       Port)
+from .pybricks import (clamp_int, wait, Port)
 from .pybricks import UltrasonicSensor as PBUltrasonicSensor
 from .pybricks import Motor as PBMotor
 
