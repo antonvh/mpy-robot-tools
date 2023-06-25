@@ -37,11 +37,11 @@ def scale(val, src, dst):
     return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
 
-def wait_until(func: function, condition=True):
+def wait_until(func, condition=True):
     """Calls input function every 10ms until it returns the wanted condition.
 
     :param func: Function to test against condition
-    :type func: function
+    :type func: function, callable
     :param condition: condition to stop waiting, defaults to True
     :type condition: bool, optional
     """
