@@ -22,7 +22,7 @@ except:
     from .hub_stub import port
 
 
-def clamp_int(n, floor=-100, ceiling=100):
+def __clamp_int(n, floor=-100, ceiling=100):
     """Limits input number to the range of -100, 100
     and returns an integer
 
@@ -37,17 +37,19 @@ def clamp_int(n, floor=-100, ceiling=100):
     """
     return max(min(round(n), ceiling), floor)
 
+
 def wait(duration_ms):
     """Sleep in miliseconds.
 
     :param duration_ms: duration (ms)
     :type duration_ms: int or float
     """
-    sleep(duration_ms/1000)
+    sleep(duration_ms / 1000)
 
-class Port():
-    """Enumerator for Port names
-    """
+
+class Port:
+    """Enumerator for Port names"""
+
     A = "A"
     B = "B"
     C = "C"
@@ -55,41 +57,26 @@ class Port():
     E = "E"
     F = "F"
 
-class Direction():
-    """Enumerator for Directions
-    """
+
+class Direction:
+    """Enumerator for Directions"""
+
     CLOCKWISE = 1
     COUNTERCLOCKWISE = -1
 
-class Stop():
-    """Enumerator for Stop modes
-    """
+
+class Stop:
+    """Enumerator for Stop modes"""
+
     BRAKE = 0
     COAST = 1
     HOLD = 2
 
 
-def scale(val, src, dst):
-    """Scales the given value from the scale of src to the scale of dst.
-
-    Args:
-        val (float | int): ....
-        src (tuple): ....
-        dst (tuple):
-
-    Return:
-        Scaled value.
-
-    Example:
-        print scale(99, (0.0, 99.0), (-1.0, +1.0))
-    """
-    return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
-
-
 class ForceSensor:
     def __init__(self, sensor_port):
         self.sensor = eval("port." + sensor_port + ".device")
-        _ = self.force() # Try the sensor
+        _ = self.force()  # Try the sensor
 
     def force(self):
         return self.sensor.get()[0]
@@ -110,7 +97,7 @@ class UltrasonicSensor:
         """
         self.sensor = eval("port." + sensor_port + ".device")
         self.lights = USLights(self.sensor)
-        _ = self.distance() # Test sensor
+        _ = self.distance()  # Test sensor
 
     def distance(self):
         """Measures the distance between the sensor and an object using ultrasonic sound waves.
@@ -143,9 +130,9 @@ class USLights:
         """
 
         if type(brightness) == int:
-            lights = [clamp_int(brightness / 10, floor=0, ceiling=10)] * 4
+            lights = [__clamp_int(brightness / 10, floor=0, ceiling=10)] * 4
         elif len(brightness) == 4:
-            lights = [clamp_int(l / 10, floor=0, ceiling=10) for l in brightness]
+            lights = [__clamp_int(l / 10, floor=0, ceiling=10) for l in brightness]
         else:
             lights = (10, 10, 10, 10)
         self.sensor.mode(5, bytes(lights))
@@ -164,18 +151,18 @@ class Motor:
 
     def __init__(self, motor, direction=1):
         motor_dir = dir(motor)
-        if '_motor_wrapper' in motor_dir:
-            self.control = MSHubControl(motor._motor_wrapper.motor)
-        elif 'get' in motor_dir:
-            self.control = MSHubControl(motor)
-        elif 'run_angle' in motor_dir:
+        if "_motor_wrapper" in motor_dir:
+            self.control = __MSHubControl(motor._motor_wrapper.motor)
+        elif "get" in motor_dir:
+            self.control = __MSHubControl(motor)
+        elif "run_angle" in motor_dir:
             self.control = motor
-        elif 'upper' in motor_dir:
+        elif "upper" in motor_dir:
             # We have a string or item from the Port enumerator
-            if motor in 'ABCDEFGH':
-                self.control = MSHubControl(eval("port." + motor + ".motor"))
+            if motor in "ABCDEFGH":
+                self.control = __MSHubControl(eval("port." + motor + ".motor"))
             else:
-                self.control = MotorStub()
+                self.control = __MotorStub()
         else:
             print("Unknown motor type")
             # We should probably raise an IOerror here
@@ -198,12 +185,12 @@ class Motor:
         :type angle: int
 
         """
-        
+
         self.control.reset_angle(*args)
 
     def track_target(self, *args, **kwargs):
         """Call this method in closed loop to ensure a motor
-        moves to this angle target. 
+        moves to this angle target.
 
         :param target: target angle, defaults to 0
         :type target: int, optional
@@ -264,11 +251,11 @@ class Motor:
         self.dc(0)
 
 
-class MSHubControl:
+class __MSHubControl:
     """Defines a controller for the PBMotor class.
-
-    This class additionally adds a method `done` to check if the motor is still running.
+    On SPIKE2 and Robot Inventor.
     """
+
     DIRECTION = 1
     DESIGN_SPEED = 905  # deg/s
 
@@ -282,10 +269,10 @@ class MSHubControl:
         return round(pct_speed * self.DESIGN_SPEED / 100) * self.DIRECTION
 
     def _angular_2_pct_speed(self, angular_speed):
-        return clamp_int(angular_speed / self.DESIGN_SPEED * 100) * self.DIRECTION
+        return __clamp_int(angular_speed / self.DESIGN_SPEED * 100) * self.DIRECTION
 
     def dc(self, duty):
-        self.motor.pwm(clamp_int(duty * self.DIRECTION))
+        self.motor.pwm(__clamp_int(duty * self.DIRECTION))
 
     def run(self, speed):
         self.motor.run_at_speed(self._angular_2_pct_speed(speed))
@@ -297,9 +284,8 @@ class MSHubControl:
             self.dc(0)
         else:
             self.timer.init(
-                mode=Timer.ONE_SHOT,
-                period=time,
-                callback=lambda x: self.motor.dc(0))
+                mode=Timer.ONE_SHOT, period=time, callback=lambda x: self.motor.dc(0)
+            )
             self.run(speed)
 
     def run_angle(self, speed, rotation_angle, wait=True):
@@ -309,7 +295,9 @@ class MSHubControl:
             direction = -1
         else:
             direction = 1
-        self.motor.run_for_degrees(rotation_angle, abs(self._angular_2_pct_speed(speed)) * direction)
+        self.motor.run_for_degrees(
+            rotation_angle, abs(self._angular_2_pct_speed(speed)) * direction
+        )
         if wait:
             sleep(0.05)
             while not self.done():
@@ -317,7 +305,9 @@ class MSHubControl:
 
     def run_target(self, speed, target_angle, wait=True):
         # run_top_position ignores sign on speed, and only looks at angle for direction
-        self.motor.run_to_position(round(target_angle*self.DIRECTION), self._angular_2_pct_speed(speed))
+        self.motor.run_to_position(
+            round(target_angle * self.DIRECTION), self._angular_2_pct_speed(speed)
+        )
         if wait:
             sleep(0.05)
             while not self.done():
@@ -338,10 +328,10 @@ class MSHubControl:
         return rel_pos
 
     def done(self):
-        return self.motor.get()[3] == 0 # or self.motor.get()[0] == 0
+        return self.motor.get()[3] == 0  # or self.motor.get()[0] == 0
 
     def abs_angle(self):
-        return self.motor.get()[2]  * self.DIRECTION
+        return self.motor.get()[2] * self.DIRECTION
 
     def reset_angle(self, *args):
         if len(args) == 0:
@@ -355,32 +345,30 @@ class MSHubControl:
         while not self.motor.get()[1] == tgt:
             self.motor.preset(tgt)
             wait(10)
-         
+
     def angle(self):
-        return self.motor.get()[1]  * self.DIRECTION
+        return self.motor.get()[1] * self.DIRECTION
 
     def speed(self):
-        return self._pct_2_angular_speed(
-            self.motor.get()[0]
-        )
+        return self._pct_2_angular_speed(self.motor.get()[0])
 
     def track_target(self, target=0, gain=1.5):
         # If track target isn't called again within 500ms, fall back to run_to_position
         self.timer.init(
             mode=Timer.ONE_SHOT,
             period=500,
-            callback=lambda x: self.motor.run_to_position(round(target), 100))
-        m_pos = self.motor.get()[1]
-        self.motor.pwm(
-            clamp_int((m_pos - target) * -gain)
+            callback=lambda x: self.motor.run_to_position(round(target), 100),
         )
+        m_pos = self.motor.get()[1]
+        self.motor.pwm(__clamp_int((m_pos - target) * -gain))
 
-class MotorStub:
+
+class __MotorStub:
     __angle = 0
     __dc = 0
     __speed = 0
     __busy = False
-    DIRECTION =1
+    DIRECTION = 1
 
     def __init__(self) -> None:
         self.timer = Timer()
@@ -420,59 +408,66 @@ class MotorStub:
         self.__speed = speed
         self.__busy = True
         if wait:
-            sleep(time/1000)
+            sleep(time / 1000)
             self.stop()
         else:
             self.timer.init(
-                mode=Timer.ONE_SHOT,
-                period=time,
-                callback=lambda x: self.stop())
-        self.__angle += round( speed * time/1000 )
+                mode=Timer.ONE_SHOT, period=time, callback=lambda x: self.stop()
+            )
+        self.__angle += round(speed * time / 1000)
 
     def run_angle(self, speed, rotation_angle, wait=True):
-        self.run_time(speed, rotation_angle/speed*1000, wait)
+        self.run_time(speed, rotation_angle / speed * 1000, wait)
 
     def run_target(self, speed, target_angle, wait=True):
         self.run_angle(speed, target_angle - self.__angle, wait)
 
     def abs_angle(self):
         return self.__angle % 360
-    
 
-class DriveBase():
+
+class DriveBase:
     straight_speed = 300
     straight_acceleration = 0
     turn_rate = 0
     turn_acceleration = 0
 
-    def __init__(self, l_motor:Motor, r_motor:Motor, wheel_diameter, axle_width):
+    def __init__(self, l_motor: Motor, r_motor: Motor, wheel_diameter, axle_width):
         self.l_motor = l_motor
         self.r_motor = r_motor
-        self.mm_to_deg = 360/(wheel_diameter*3.1415)
+        self.mm_to_deg = 360 / (wheel_diameter * 3.1415)
         self.axle_width = axle_width
         self.wheel_diameter = wheel_diameter
         self.turn_rate = self.straight_speed * self.axle_width / self.wheel_diameter
 
     def straight(self, distance):
-        self.l_motor.run_angle(self.straight_speed, self.mm_to_deg*distance, wait=False)
-        self.r_motor.run_angle(self.straight_speed, self.mm_to_deg*distance, wait=True)
+        self.l_motor.run_angle(
+            self.straight_speed, self.mm_to_deg * distance, wait=False
+        )
+        self.r_motor.run_angle(
+            self.straight_speed, self.mm_to_deg * distance, wait=True
+        )
 
     def curve(self, radius, degrees):
-        inner_dist = abs(degrees)/360 * (radius-self.axle_width/2)*2*3.1415
-        outer_dist = abs(degrees)/360 * (radius+self.axle_width/2)*2*3.1415
+        inner_dist = abs(degrees) / 360 * (radius - self.axle_width / 2) * 2 * 3.1415
+        outer_dist = abs(degrees) / 360 * (radius + self.axle_width / 2) * 2 * 3.1415
         if degrees < 0:
-            self.r_motor.run_angle(self.straight_speed, outer_dist*self.mm_to_deg, wait=False)
+            self.r_motor.run_angle(
+                self.straight_speed, outer_dist * self.mm_to_deg, wait=False
+            )
             self.l_motor.run_angle(
-                abs(inner_dist)/abs(outer_dist)*self.straight_speed,
-                inner_dist*self.mm_to_deg,
-                wait=True
+                abs(inner_dist) / abs(outer_dist) * self.straight_speed,
+                inner_dist * self.mm_to_deg,
+                wait=True,
             )
         else:
-            self.l_motor.run_angle(self.straight_speed, outer_dist*self.mm_to_deg, wait=False)
+            self.l_motor.run_angle(
+                self.straight_speed, outer_dist * self.mm_to_deg, wait=False
+            )
             self.r_motor.run_angle(
-                abs(inner_dist)/abs(outer_dist)*self.straight_speed,
-                inner_dist*self.mm_to_deg,
-                wait=True
+                abs(inner_dist) / abs(outer_dist) * self.straight_speed,
+                inner_dist * self.mm_to_deg,
+                wait=True,
             )
 
     def drive(self, speed, turn_rate):
@@ -489,7 +484,16 @@ class DriveBase():
 
     def settings(self, *args):
         if len(args) is 4:
-            self.straight_speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration = args
-        else: 
-            return self.straight_speed, self.straight_acceleration, self.turn_rate, self.turn_acceleration
-
+            (
+                self.straight_speed,
+                self.straight_acceleration,
+                self.turn_rate,
+                self.turn_acceleration,
+            ) = args
+        else:
+            return (
+                self.straight_speed,
+                self.straight_acceleration,
+                self.turn_rate,
+                self.turn_acceleration,
+            )
