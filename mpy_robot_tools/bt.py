@@ -115,17 +115,22 @@ _UART_SERVICE = (
 
 
 def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
-    # Generate advertising payload.
+    """
+    Generate advertising payload.
 
-    # Args:
-    #    limited_disc (bool): Limited .... . Default value: ``False``.
-    #    br_edr (bool): B..... . Default value: ``False`.
-    #    name (str): Name ..... . Default value: ``None`.
-    #    services (list): List of services ...Default value: ``None`.
-    #    appearance (int): .... . Default value: ``False``.
-
-    # Returns:
-    #    An array of bytes with the specified payload.
+    :param limited_disc: Limited discoverable mode. Determines whether the device can be discoverable for a limited period. Default value is ``False``.
+    :type limited_disc: bool
+    :param br_edr: BR/EDR support (Basic Rate/Enhanced Data Rate). Determines whether the device supports classic Bluetooth. Default value is ``False``.
+    :type br_edr: bool
+    :param name: Name of the device to be advertised. Default value is ``None``.
+    :type name: str
+    :param services: List of services offered by the device, typically identified by UUIDs. Default value is ``None``.
+    :type services: list
+    :param appearance: Appearance category code, describing the visual appearance of the device (e.g., phone, keyboard). Default value is ``False``.
+    :type appearance: int
+    :return: An array of bytes with the specified payload.
+    :rtype: list[bytes]
+    """
 
     payload = bytearray()
 
@@ -211,14 +216,14 @@ def _decode_services(payload):
 
 
 class BLEHandler:
-    # """Basic Bluetooth Low Energy class that can be a central or peripheral or both.
-    # The central always connects to a peripheral. The Peripheral just advertises.
+    """
+    Basic Bluetooth Low Energy class that can be a central or peripheral or both.
+    The central always connects to a peripheral. The Peripheral just advertises.
 
-    #    Args:
-    #        debug (bool): Keep a log of events in the log property
-    #        WARNING: Debug log is kept in memory. Long transactions will lead to memory errors!
+    :param debug: Keep a log of events in the log property. WARNING: Debug log is kept in memory. Long transactions will lead to memory errors!
+    :type debug: bool
+    """
 
-    # """
     def __init__(self, debug=False):
         self._ble = ubluetooth.BLE()
         self._ble.config(rxbuf=TARGET_MTU)
@@ -258,6 +263,18 @@ class BLEHandler:
             self.log_data = b''
 
     def info(self, *messages):
+        """Saves messages to the log if debug is enabled. 
+        :param messages: Messages to save to the log
+        :type messages: str
+        :return: None
+        :rtype: None
+        :Example:
+
+        .. code-block:: python
+
+            self.info(var1, var2, var3)
+        """
+
         if self.debug:
             for m in messages:
                 d = bytes(str(m),'utf8')
