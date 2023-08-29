@@ -29,6 +29,7 @@ DEFAULT_INSTALL = """INSTALL = {
     'pyhuskylens': False, # Huskylens API
     'rc': False,          # Legacy file
     'uartremote':True,    # Legacy SerialTalk
+    'sen0539': False,     # SEN0539 sensor for ESP and OpenMV
 }"""
 
 files = [f for f in os.listdir(LIB) if f not in SKIP_FILES]
