@@ -5,8 +5,13 @@ name = "pypi"
 
 [packages]
 rshell = "*"
+mpy-cross = "*"
+pytest = "*"
 
 [dev-packages]
 
 [requires]
 python_version = "3.9"
+
+[scripts]
+create = "python3 Installer/create_install_script.py"
