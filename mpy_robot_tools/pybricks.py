@@ -82,7 +82,7 @@ class ForceSensor:
         return self.sensor.get()[0]
 
     def pressed(self):
-        return self.force() is not 0
+        return self.force() != 0
 
 
 class UltrasonicSensor:
@@ -483,7 +483,7 @@ class DriveBase:
         self.r_motor.stop()
 
     def settings(self, *args):
-        if len(args) is 4:
+        if len(args) == 4:
             (
                 self.straight_speed,
                 self.straight_acceleration,

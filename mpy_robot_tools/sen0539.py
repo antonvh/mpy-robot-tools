@@ -3,7 +3,7 @@
 
 
 from micropython import const
-from time import sleep_ms
+from utime import sleep_ms
 from sys import platform
 
 ESP = const(0)

@@ -54,11 +54,11 @@ BUTTONS = const(8)
 
 _NOTIFY_ENABLE = const(1)
 _INDICATE_ENABLE = const(2)
-_FLAG_READ = const(0x0002)
-_FLAG_WRITE_NO_RESPONSE = const(0x0004)
-_FLAG_WRITE = const(0x0008)
-_FLAG_NOTIFY = const(0x0010)
-_FLAG_INDICATE = const(0x0020)
+_FLAG_READ = 0x02
+_FLAG_WRITE_NO_RESPONSE = 0x04
+_FLAG_WRITE = 0x08
+_FLAG_NOTIFY = 0x10
+_FLAG_INDICATE = 0x20
 
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -819,7 +819,7 @@ class RCReceiver(UARTPeripheral):
         except:
             controller_state = [0]*9
         if indices:
-            if len(indices) is 1:
+            if len(indices) == 1:
                 return controller_state[indices[0]]
             else:
                 return [controller_state[i] for i in indices]

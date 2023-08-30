@@ -163,7 +163,7 @@ EMERGENCY_1 = [
 def keyframes(frames):
     frames.reverse()
     period = frames[0][0]
-    if period is 0: period = 1
+    if period == 0: period = 1
     def func(time, **kwargs):
         result = [OFF]
         for frame_time, pixels in frames:
@@ -183,7 +183,7 @@ def keyframes_dict(frames_dict, name="animation"):
             if anim_key in frames_dict:
                 frames = frames_dict[anim_key]
                 period = frames[0][0]
-                if period is 0: period = 1
+                if period == 0: period = 1
                 for frame_time, pixels in frames:
                     if time%period >= frame_time:
                         result = pixels
