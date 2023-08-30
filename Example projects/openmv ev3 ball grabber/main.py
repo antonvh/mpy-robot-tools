@@ -35,15 +35,24 @@ st = SerialTalk(Port.S1)
 mb = Motor(Port.B, Direction.COUNTERCLOCKWISE)
 mc = Motor(Port.C, Direction.COUNTERCLOCKWISE)
 md = Motor(Port.D) # Claw
-db = DriveBase(mb, mc, 64, 140)
+db = DriveBase(mb, mc, 64, 150)
 
 # Write your program here.
 ev3.speaker.beep()
 # Find the position where the claw is closed.
 md.run_until_stalled(100)
 md.reset_angle(0)
-md.run_target(300, -80)
+
+def open_claw():
+    md.run_target(300, -80)
+
+def close_claw():
+    md.run_time(500, 500, Stop.HOLD)
+
+open_claw()
+st.flush()
 print(st.call("echo", "SerialTalk is ready.")[1])
+st.call("ok")
 
 FETCH = 1
 LISTEN = 0
@@ -56,27 +65,35 @@ while True:
     if mode == FETCH:
         x, y, num_pixels = st.call("get_blob")[1]
 
-        print(x, y, num_pixels)
+        # print(x, y, num_pixels)
         if y < 45:  # The blob is close enough to fetch.
             db.stop()
-            md.run_time(500, 500, Stop.HOLD)
+            close_claw()
             db.straight(-db.distance())
             mode = LISTEN
         elif 0 < num_pixels < CLOSE_BLOB_PIXELS:
             db.drive(max((CLOSE_BLOB_PIXELS - num_pixels) * 0.02, 0), (150 - x) * -0.7)
         else:
             db.drive(0, 50)
+            ack, cmd = st.call("cmd")
+            if ack == "cmdack":
+                if cmd > 0:
+                    if cmd == 23:
+                        print("Back")
+                        db.stop()
+                        mode = LISTEN
     elif mode == LISTEN:
         ack, cmd = st.call("cmd")
+        print(ack, cmd)
         if ack == "cmdack":
             if cmd > 0:
-                # print(cmd)
                 if cmd == 22:
                     print("Fwd")
                     db.straight(50)
                 if cmd == 5:
                     print("Fetch ball")
                     db.reset()
+                    open_claw()
                     mode = FETCH
                 elif cmd == 23:
                     print("Back")
@@ -101,10 +118,10 @@ while True:
                     db.turn(-30)
                 elif cmd == 141:
                     print("Open")
-                    md.run_target(300, -80)
+                    open_claw()
                 elif cmd == 142:
                     print("Close")
-                    md.run_time(500, 500, Stop.HOLD)
+                    close_claw()
                 elif cmd == 2:
                     print("OK")
                 else:

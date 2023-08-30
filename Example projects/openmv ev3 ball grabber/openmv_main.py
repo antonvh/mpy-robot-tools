@@ -1,13 +1,14 @@
 from sen0539 import SEN0539
 from serialtalk.auto import SerialTalk
 
+# Warning: SEN0539 is not compatible with the LCD shield. 
+# Both use P7 and P8 pins.
+
 st = SerialTalk()
 voice = SEN0539()
 
 def ok():
     voice.play_cmd_id(2)
-
-ok()
 
 def cmd():
     id = voice.get_cmd_id()
@@ -16,7 +17,6 @@ def cmd():
 
 x,y,pixels = 0,0,0
 def get_blob():
-#    global x,y,pixels
     return x,y,pixels
 
 st.add_command(ok)
@@ -28,9 +28,7 @@ st.add_command(get_blob, 'hhh')
 #
 # This example shows off single color RGB565 tracking using the OpenMV Cam.
 
-import sensor, image, time, math, lcd
-
-lcd.init()
+import sensor, time
 
 threshold_index = 0 # 0 for red, 1 for green, 2 for blue
 
@@ -71,7 +69,7 @@ while(True):
 
     st.process_uart()
     
-    # If you have the LCD shield:
-    lcd.display(img.scale(x_scale=0.4, y_scale=0.4, copy=True))
+    # Voice sensor not compatible with LCD shield:
+    # lcd.display(img.scale(x_scale=0.4, y_scale=0.4, copy=True))
 
     

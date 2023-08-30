@@ -3,7 +3,7 @@
 
 
 from micropython import const
-from utime import sleep_ms
+from utime import sleep_ms, ticks_ms, ticks_diff
 from sys import platform
 
 ESP = const(0)
@@ -209,6 +209,7 @@ class SEN0539:
                 i2c = SoftI2C(scl=Pin(scl), sda=Pin(sda))
         self.i2c = i2c
         self.addr = addr
+        self.lr = ticks_ms()  # Last read time
 
     def get_cmd_id(self):
         """
@@ -217,8 +218,12 @@ class SEN0539:
         :return: Command word ID
         :rtype: int
         """
-        sleep_ms(20)  # Don't overload the sensor
-        return self.rd(REG_GET_CMD_ID)
+        if ticks_diff(ticks_ms(), self.lr) > 100:
+            # Don't overload the sensor
+            self.lr = ticks_ms() 
+            return self.rd(REG_GET_CMD_ID)
+        else:
+            return 0
 
     def play_cmd_id(self, cmd_id):
         """
@@ -286,7 +291,10 @@ class SEN0539:
         :rtype: int
         """
         if PFRM == OPENMV:
-            return self.i2c.mem_read(1, self.addr, reg)[0]
+            try:
+                return self.i2c.mem_read(1, self.addr, reg, timeout=100)[0]
+            except:
+                return 0
         else:
             return self.i2c.readfrom_mem(self.addr, reg, 1)[0]
         
