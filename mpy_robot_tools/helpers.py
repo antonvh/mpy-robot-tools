@@ -21,18 +21,16 @@ def clamp_int(n, floor=-100, ceiling=100):
 
 
 def scale(val, src, dst):
-    """Scales the given value from the scale of src to the scale of dst.
+    """
+    Returns the given value scaled from the scale of src to the scale of dst.
 
-    Args:
-        val (float | int): ....
-        src (tuple): ....
-        dst (tuple):
-
-    Return:
-        Scaled value.
-
-    Example:
-        print scale(99, (0.0, 99.0), (-1.0, +1.0))
+    :param val: Value to scale. Ex: 75
+    :type val: int or float
+    :param src: Original range. Ex: (0.0, 99.0)
+    :type src: tuple
+    :param dst: Target range. Ex: (-1.0, +1.0)
+    :type dst: tuple
+    :return: Scaled value. Ex: 0.5
     """
     return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
