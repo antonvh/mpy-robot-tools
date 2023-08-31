@@ -209,7 +209,8 @@ class SEN0539:
                 i2c = SoftI2C(scl=Pin(scl), sda=Pin(sda))
         self.i2c = i2c
         self.addr = addr
-        assert addr in self.i2c.scan(), "No I2C device found on addr " + repr(hex(addr))
+        if not addr in self.i2c.scan():
+            print("Warning: No I2C device found on addr " + repr(hex(addr)) )
         self.lr = ticks_ms()  # Last read time
 
     def get_cmd_id(self):
@@ -283,17 +284,20 @@ class SEN0539:
             self.wr(REG_SET_MUTE, 0)
 
     def rd(self, reg):
-        if PFRM == OPENMV:
-            try:
+        try:
+            if PFRM == OPENMV:
                 return self.i2c.mem_read(1, self.addr, reg, timeout=100)[0]
-            except:
-                return 0
-        else:
-            return self.i2c.readfrom_mem(self.addr, reg, 1)[0]
+            else:
+                return self.i2c.readfrom_mem(self.addr, reg, 1)[0]
+        except:
+            return -1
         
     def wr(self, reg, val):
         val &= 0xFF  # Make sure it's 8 bits
-        if PFRM == OPENMV:
-            self.i2c.mem_write(val, self.addr, reg)
-        else:
-            self.i2c.writeto_mem(self.addr, reg, bytes([val]))
+        try:
+            if PFRM == OPENMV:
+                self.i2c.mem_write(val, self.addr, reg)
+            else:
+                self.i2c.writeto_mem(self.addr, reg, bytes([val]))
+        except:
+            pass
