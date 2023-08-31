@@ -283,14 +283,6 @@ class SEN0539:
             self.wr(REG_SET_MUTE, 0)
 
     def rd(self, reg):
-        """
-        Read a register
-
-        :param reg: Register address
-        :type reg: int
-        :return: Register value
-        :rtype: int
-        """
         if PFRM == OPENMV:
             try:
                 return self.i2c.mem_read(1, self.addr, reg, timeout=100)[0]
@@ -300,14 +292,6 @@ class SEN0539:
             return self.i2c.readfrom_mem(self.addr, reg, 1)[0]
         
     def wr(self, reg, val):
-        """
-        Write a register
-
-        :param reg: Register address
-        :type reg: int
-        :param val: Register value
-        :type val: int
-        """
         val &= 0xFF  # Make sure it's 8 bits
         if PFRM == OPENMV:
             self.i2c.mem_write(val, self.addr, reg)
