@@ -209,6 +209,7 @@ class SEN0539:
                 i2c = SoftI2C(scl=Pin(scl), sda=Pin(sda))
         self.i2c = i2c
         self.addr = addr
+        assert addr in self.i2c.scan(), "No I2C device found on addr " + repr(hex(addr))
         self.lr = ticks_ms()  # Last read time
 
     def get_cmd_id(self):
@@ -218,7 +219,7 @@ class SEN0539:
         :return: Command word ID
         :rtype: int
         """
-        if ticks_diff(ticks_ms(), self.lr) > 100:
+        if ticks_diff(ticks_ms(), self.lr) > 50:
             # Don't overload the sensor
             self.lr = ticks_ms() 
             return self.rd(REG_GET_CMD_ID)
