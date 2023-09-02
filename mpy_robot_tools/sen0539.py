@@ -1,6 +1,12 @@
 # Micropython i2c library for SEN0539-EN Voice Recognition Module by DFRobot
 # DFRobot_DF2301Q Class infrastructure, implementation of underlying methods
+# Get the sensor here: https://www.dfrobot.com/product-2665.html?tracking=KuVJyhg7ViWvTzwnTpVkQztSs49q2bHS4iXsF0r8KiKJVoz20ppvOx4FHfVbONxc
 
+__author__ = "Anton Vanhoucke"
+__copyright__ = "Copyright 2023, AntonsMindstorms.com"
+__license__ = "GPL"
+__version__ = "1.0.1"
+__status__ = "Production"
 
 from micropython import const
 from utime import sleep_ms, ticks_ms, ticks_diff
