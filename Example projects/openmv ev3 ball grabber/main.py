@@ -11,6 +11,9 @@
 # Teach the "Fetch ball" trigger word to the SEN0538 Voice Recognition Module by saying
 # "Learning command word" and then "Fetch ball" into the microphone.
 
+__author__ = "Anton Vanhoucke"
+__copyright__ = "(c) 2023 Antonsmindstorms.com"
+
 from pybricks.hubs import EV3Brick
 from pybricks.ev3devices import (
     Motor,
@@ -66,7 +69,7 @@ while True:
         x, y, num_pixels = st.call("get_blob")[1]
 
         # print(x, y, num_pixels)
-        if y < 45:  # The blob is close enough to fetch.
+        if y < 45 and num_pixels > CLOSE_BLOB_PIXELS*.2:  # The blob is close enough to fetch.
             db.stop()
             close_claw()
             db.straight(-db.distance())
