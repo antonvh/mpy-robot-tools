@@ -44,6 +44,7 @@ except:
 TARGET_MTU = const(184) # Try to negotiate this packet size for UART
 MAX_NOTIFY = const(100) # Somehow notify with the full mtu is unstable. Memory issue?
 
+#: RC control data selection (list index of the data to be used)
 L_STICK_HOR = const(0)
 L_STICK_VER = const(1)
 R_STICK_HOR = const(2)
@@ -131,6 +132,8 @@ MIDI_SERVICE = (
 # From C3 - A and B are above G
 # Semitones     A   B   C   D   E   F   G
 NOTE_OFFSET = [21, 23, 12, 14, 16, 17, 19]
+
+#: Chord styles for the play_chord method of the MidiController class.
 CHORD_STYLES = { 
     # Note (half tone) offsets from base note
     "M": (0, 4, 7, 12), 
@@ -217,15 +220,15 @@ def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=N
 
 
 def _decode_field(payload, adv_type):
-    # Decode particular fields from the payload.
+    """
+    Decode field from BLE Advertising payload.
 
-    # Args:
-    #    payload (bytearray): Payload of the message.
-    #    adv_type (?): Type of the field to decode.
-
-    # Returns:
-    #    An array with the decoded fields.
-
+    :param payload: Payload of the message.
+    :type payload: bytearray
+    :param adv_type: Type of the field to decode. See constants starting with ``_ADV_TYPE_`` for possible values.
+    :type adv_type: int
+    :return: An list with the decoded field values.
+    """
     i = 0
     result = []
     while i + 1 < len(payload):
@@ -236,27 +239,25 @@ def _decode_field(payload, adv_type):
 
 
 def _decode_name(payload):
-    # Decode payload name .
+    """
+    Decode name from BLE Advertising payload.
 
-    #    Args:
-    #        payload (bytearray): Payload of the message.
-
-    #    Returns:
-    #        A string with the name or the payload or the empty string.
-
+    :param payload: Payload of the message.
+    :type payload: bytearray
+    """
     n = _decode_field(payload, _ADV_TYPE_NAME)
     return str(n[0], "utf-8") if n else ""
 
 
 def _decode_services(payload):
-    # Decode service ids.
+    """
+    Decode service UUIDs from BLE Advertising payload.
 
-    #        Args:
-    #            payload (bytearray): Payload of the message.
+    :param payload: Payload of the message.
+    :type payload: bytearray
 
-    #        Returns:
-    #            An array with the `ids` of the available services.
-
+    :return: A list of UUID objects representing the services.
+    """
     services = []
     for u in _decode_field(payload, _ADV_TYPE_UUID16_COMPLETE):
         services.append(ubluetooth.UUID(struct.unpack("<h", u)[0]))
@@ -271,6 +272,8 @@ class BLEHandler:
     """
     Basic Bluetooth Low Energy class that can be a central or peripheral or both.
     The central always connects to a peripheral. The Peripheral just advertises.
+    Instantiate a BLEHandler and pass it to the UARTCentral and UARTPeripheral class,
+    if you want to use both classes on the same device.
 
     :param debug: Keep a log of events in the log property. WARNING: Debug log is kept in memory. Long transactions will lead to memory errors!
     :type debug: bool
@@ -506,21 +509,50 @@ class BLEHandler:
         else:
             self.info("Unhandled event: ", hex(event), "data:", data)
 
-    def discover_characteristics(self, args):
-        self._ble.gattc_discover_characteristics(*args)
-
     def advertise(self, payload, interval_us=100000):
+        """
+        Advertise a BLE payload for a given time interval.
+        Create the payload with the _advertising_payload() function.
+        """
         print("Started advertising")
         self._ble.gap_advertise(interval_us, adv_data=payload)
 
     def on_write(self, value_handle, callback):
+        """
+        Register a callback on the peripheral (server) side for when a client (central) writes to a characteristic or descriptor.
+        It's time to process the received data!
+
+        :param value_handle: The handle of the characteristic or descriptor to register the callback for.
+        :type value_handle: int
+        :param callback: The callback function to call when a client writes to the characteristic or descriptor.
+        :type callback: function
+        """
         self._write_callbacks[value_handle] = callback
 
     def on_write_done(self, conn_handle, callback):
+        """
+        Register a client (central) callback for when that client (central) is done writing to a characteristic or descriptor.
+        This helps you to avoid writing too much data to the peripheral too soon.
+
+        :param conn_handle: The handle of the connection to register the callback for.
+        :type conn_handle: int
+        :param callback: The callback function to call when a client writes to the characteristic or descriptor.
+        :type callback: function
+        """
         self._write_done_callbacks[conn_handle] = callback
 
     def notify(self, data, val_handle, conn_handle=None):
-        # Notify all connected centrals interested in the handle
+        """
+        Notify all connected centrals interested in the value handle,
+        with the given data.
+        Optionally notify a specific central only.
+
+        :param data: The data to send to the central(s).
+        :type data: bytes
+        :param val_handle: The handle of the characteristic or descriptor to notify.
+        :type val_handle: int
+        :param conn_handle: The handle of the connection to notify. If None, notify all connected centrals.
+        """
         if conn_handle is not None:
             self._ble.gatts_notify(conn_handle, val_handle, data)
         else:
@@ -528,6 +560,7 @@ class BLEHandler:
                 self._ble.gatts_notify(conn_handle, val_handle, data)
 
     def register_uart_service(self, on_write=None, on_connect=None, on_disconnect=None):
+        # TODO: make this part of the UARTPeripheral class
         ((handle_tx, handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
 
         self.on_write(handle_rx, on_write)
@@ -553,25 +586,32 @@ class BLEHandler:
         # _ = self._ble.gatts_read(handle_tx)
         return handle_tx, handle_rx
 
-    # Find a device advertising the uart service.
     def scan(self):
+        """
+        Start scanning for BLE peripherals. Scan results will be returned in the IRQ handler.
+        """
         self._ble.gap_scan(20000, 30000, 30000)
 
     def stop_scan(self):
+        """
+        Stop scanning for BLE peripherals.
+        """
         self._ble.gap_scan(None)
 
     def connect_uart(self, name="robot", on_disconnect=None, on_notify=None, on_write_done=None, time_out=10):
-        # """ Connect to a BLE Peripheral that advertises with a certain name
-        # This method is meant for BLE Centrals
+        """
+        Connect to a BLE Peripheral that advertises with a certain name, and has a UART service.
+        This method is meant for BLE Centrals
 
-        # Args:
-        #    name (str): Device name to look for
-        #    on_disconnect (def): Method to call when any side disconnects
-        #    on_notify (def): Method to call when Peripheral sends notify data.
-        #    time_out (int): Number of seconds to wait for a connection.
-        # Returns:
-
-        # """
+        :param name: The name of the peripheral to search for and connect to
+        :type name: str
+        :param on_disconnect: Callback function to call when the peripheral disconnects
+        :type on_disconnect: function
+        :param on_notify: Callback function to call when the peripheral notifies the central
+        :type on_notify: function
+        :param on_write_done: Callback function to call when the peripheral is done writing to the central
+        :type on_write_done: function
+        """
         # TODO: Create a generic connecting function that encodes the searched-for advertising data
         # self._search_payload = _advertising_payload(name=name, services=[_UART_UUID])
         # and searches for a match. 
@@ -613,6 +653,10 @@ class BLEHandler:
         return self._conn_handle, self._rx_handle, self._tx_handle
 
     def connect_lego(self, time_out=10):
+        """
+        Connect to a LEGO Smart Hub that advertises with a LEGO service.
+        LEGO Hubs are advertising when their leds are blinking, just after turning them on.
+        """
         self.connecting_lego = True
         self._conn_handle = None
         self._start_handle = None
@@ -636,26 +680,12 @@ class BLEHandler:
         self._ble.gattc_write(conn_handle, rx_handle, value, 1 if response else 0)
         self.info("GATTC Written ", value)
 
-    def read(self, conn_handle, value_handle):
-        self._read_data[(value_handle << 12) + conn_handle] = b''
-        try:
-            self._ble.gattc_read(conn_handle, value_handle)
-        except Exception as e:
-            print("gattc_read failed", e)
-        for i in range(100):
-            result = self._read_data[(value_handle << 12) + conn_handle]
-            if result:
-                return result
-            else:
-                sleep_ms(10)
-
     def lego_write(self, value, conn_handle=None, response=False):
         if not conn_handle: conn_handle = self._conn_handle
         if self._lego_value_handle and conn_handle is not None:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
             self.info("GATTC Written ", value)
 
-    # Connect to the specified device (otherwise use cached address from a scan).
     def connect(self, addr_type, addr):
         self._ble.gap_connect(addr_type, addr)
 
@@ -669,7 +699,15 @@ class BLEHandler:
 
 
 class MidiController:
-    def __init__(self, name="esp-midi", ble_handler=None):
+    """
+    Class for a MIDI BLE Controller. Turn your MINDSTORMS hub or LMS-ESP32 into a MIDI musical instrument!
+
+    :param name: The name of the MIDI controller
+    :type name: str
+    :param ble_handler: A BLEHandler instance. If None, a new one will be created.
+    :type ble_handler: BLEHandler
+    """
+    def __init__(self, name="antons-mindstorms-midi", ble_handler=None):
         if ble_handler is None:
             self.ble_handler = BLEHandler()
         else:
@@ -678,6 +716,17 @@ class MidiController:
         self.ble_handler.advertise(_advertising_payload(name=name, services=[MIDI_SERVICE_UUID]))
 
     def write_midi_msg(self, cmd, data0, data1):
+        """
+        Timestamps and writes a MIDI message to the BLE GATT server.
+        See https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message for MIDI message format.
+
+        :param cmd: MIDI command byte
+        :type cmd: byte or int
+        :param data0: MIDI data byte 0
+        :type data0: byte or int
+        :param data1: MIDI data byte 1
+        :type data1: byte or int
+        """
         d = bytearray(5)
         timestamp_ms = ticks_ms()
         d[0] = (timestamp_ms >> 7 & 0x3F) | 0x80
@@ -688,6 +737,18 @@ class MidiController:
         self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
     
     def write_midi_chord(self, cmd, data0, data1, style="M"):
+        """
+        Timestamps and writes a MIDI chord to the BLE GATT server.
+
+        :param cmd: MIDI command byte (0x90 for note on, 0x80 for note off)
+        :type cmd: byte or int
+        :param data0: MIDI data byte 0 (note number)
+        :type data0: byte or int
+        :param data1: MIDI data byte 1 (velocity)
+        :type data1: byte or int
+        :param style: Chord style. See CHORD_STYLES for possible values.
+        :type style: str
+        """
         d = bytearray(11)
         timestamp_ms = ticks_ms()
         d[0] = (timestamp_ms >> 7 & 0x3F) | 0x80
@@ -704,21 +765,67 @@ class MidiController:
         self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
 
     def note_on(self, note, velocity):
-        self.write_midi_msg(0x90, note, velocity )
+        """
+        Send a MIDI 'note on' message.
+
+        :param note: The note to play. Can be a MIDI note number (0-127) or a string like "C4" or "C#4"
+        :type note: byte or int or str
+        :param velocity: The velocity of the note key press (0-127)
+        :type velocity: byte or int
+        """
+        self.write_midi_msg(0x90, note_parser(note), velocity )
 
     def note_off(self, note, velocity=0):
-        self.write_midi_msg(0x80, note, velocity )
+        """
+        Send a MIDI 'note off' message.
+
+        :param note: The note to stop playing. Can be a MIDI note number (0-127) or a string like "C4" or "C#4"
+        :type note: byte or int or str
+        :param velocity: The velocity of the note key release (0-127)
+        :type velocity: byte or int
+        """
+        self.write_midi_msg(0x80, note_parser(note), velocity )
         
     def control_change(self, control, value):
+        """
+        Send a MIDI CC 'control change' message. Handy for your ableton live controller.
+
+        :param control: The control number (0-127)
+        :type control: byte or int
+        :param value: The value of the control (0-127)
+        :type value: byte or int
+        """
         self.write_midi_msg(0xB0, control, value)
         
     def chord_on(self, base, velocity, style="M"):
+        """
+        Start playing a MIDI chord.
+
+        :param base: The base note of the chord. Can be a MIDI note number (0-127) or a string like "C4" or "C#4"
+        :type base: byte or int or str
+        :param velocity: The velocity of the chord key press (0-127)
+        :type velocity: byte or int
+        :param style: Chord style. See CHORD_STYLES for possible values.
+        """
         self.write_midi_chord(0x90, note_parser(base), velocity, style)
 
     def chord_off(self, base, velocity=0, style="M"):
+        """
+        Stop playing a MIDI chord.
+        """
         self.write_midi_chord(0x80, note_parser(base), velocity, style)
 
     def play_chord(self, base, style="M", duration=1000):
+        """
+        Play a MIDI chord for a given duration.
+
+        :param base: The base note of the chord. Can be a MIDI note number (0-127) or a string like "C4" or "C#4"
+        :type base: byte or int or str
+        :param style: Chord style. See CHORD_STYLES for possible values.
+        :param duration: The duration of the chord in milliseconds
+        :type duration: int
+
+        """
         self.chord_on(base, 100, style)
         sleep_ms(duration*7//10)
         self.chord_off(base, 100, style)
@@ -726,13 +833,9 @@ class MidiController:
 
 
 class BleUARTBase:
-    # """Base class with a buffer for UART methods any() and read()
-
-    # Args:
-    #    Buffered (bool): Add to the buffer or overwrite the buffer
-    #        when new data arrives. Default: True
-
-    # """
+    """
+    Base class with a buffer for UART methods any(), read()
+    """
     READS_PER_MS = 10
 
     def __init__(self, additive_buffer=True):
@@ -747,9 +850,18 @@ class BleUARTBase:
                 self.read_buffer = data
 
     def any(self):
+        """
+        Returns the number of bytes in the read buffer.
+        """
         return len(self.read_buffer)
 
     def read(self, n=-1):
+        """
+        Read data from remote.
+
+        :param n: The number of bytes to read. If n is negative or omitted, read all data available.
+        :type n: int
+        """
         bufsize = len(self.read_buffer)
         if n < 0 or n > bufsize:
             n = bufsize
@@ -758,6 +870,9 @@ class BleUARTBase:
         return data
 
     def readline(self):
+        """
+        Read a line from remote. A line is terminated with a newline character. '\n'
+        """
         data = b''
         tries = 0
         while tries < 50: # 1s timeout
@@ -774,6 +889,9 @@ class BleUARTBase:
         return data.decode("UTF")
 
     def writeline(self, data: str):
+        """
+        Write data to remote and terminate with an added newline character. '\n'
+        """
         self.write(data+"\n")
 
 
@@ -781,6 +899,13 @@ class UARTPeripheral(BleUARTBase):
     """
     Class for a Nordic UART BLE server/peripheral.
     It will advertise as the given name and populate the UART services and characteristics
+
+    :param name: The name of the peripheral
+    :type name: str
+    :param ble_handler: A BLEHandler instance. If None, a new one will be created.
+    :type ble_handler: BLEHandler
+    :param additive_buffer: If True, the read buffer will be added to on each read. If False, the read buffer will be overwritten on each read.
+    :type additive_buffer: bool
     """
 
     def __init__(self, name="robot", ble_handler: BLEHandler = None, additive_buffer=True):
@@ -806,7 +931,9 @@ class UARTPeripheral(BleUARTBase):
         self.read()
 
     def write(self, data):
-        # Notify central of new data.
+        """
+        Write uart data to remote. This is a blocking call.
+        """
         if self.is_connected():
             try:
                 for c in self.ble_handler._connected_centrals:
@@ -853,6 +980,12 @@ class UARTCentral(BleUARTBase):
         self.writing = False
 
     def connect(self, name="robot"):
+        """
+        Search for and connect to a peripheral with a given name.
+
+        :param name: The name of the peripheral to connect to
+        :type name: str
+        """
         self._periph_name = name
         self._conn_handle, self._rx_handle, self._tx_handle = self.ble_handler.connect_uart(
             name,
@@ -870,6 +1003,12 @@ class UARTCentral(BleUARTBase):
             self.ble_handler.disconnect(self._conn_handle)
 
     def write(self, data):
+        """
+        Write uart data to remote. This is a blocking call and will wait until writing is done.
+
+        :param data: The data to write to the peripheral
+        :type data: bytes
+        """
         if self.is_connected():
             try:
                 # Chop data in mtu-sizes packages
@@ -894,13 +1033,14 @@ class UARTCentral(BleUARTBase):
                 print("Error writing:", partial, type(partial), len(partial), e)
 
     def fast_write(self, data):
-        # """ Write to server/peripheral as fast as possible
-        # - Data is truncated to mtu
-        # - No pause after writing. Writing too often can crash the ble stack. Be careful
+        """ 
+        Write to server/peripheral as fast as possible. Non-blocking.
+        - Data is truncated to mtu
+        - No pause after writing. Writing too often can crash the ble stack. Be careful
 
-        # Args:
-        #    data (str or bytes): Payload to transmit
-        # """
+        :param data: The data to write to the peripheral
+        :type data: bytes
+        """
         if self.is_connected():
             try:
                 self.ble_handler.uart_write(
@@ -914,20 +1054,46 @@ class UARTCentral(BleUARTBase):
 
 
 class RCReceiver(UARTPeripheral):
+    """
+    Class for an Remote Control Receiver. It reads and processes gamepad or remote control data.
+    It will advertise as the given name.
+
+    :param name: The name of this peripheral to advertise as. Default: "robot"
+    :type name: str
+    :param ble_handler: A BLEHandler instance. If None, a new one will be created.
+    :type ble_handler: BLEHandler
+    """
     def __init__(self, **kwargs):
         super().__init__(additive_buffer=False, **kwargs)
         self.read_buffer = bytearray(struct.calcsize("bbbbBBhhB"))
 
     def button_pressed(self, button):
-        # Test if any buttons are pressed on the remote
+        """
+        Returns True if the given button is pressed on the remote control.
+
+        :param button: The button number to check. 1-8
+        :type button: int
+        """
         if 0 < button < 9:
             return self.controller_state(BUTTONS) & 1 << button-1
         else:
             return False
 
     def controller_state(self, *indices):
+        """
+        Returns the controller state as a list of 9 integers: [left_stick_x, left_stick_y, right_stick_x, right_stick_y, left_trigger, right_trigger, left_setting, right_setting, buttons]
+
+        :param indices: The items of the controller state to return. 
+        If omitted, the whole list is returned. Use these constants: L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER, L_TRIGGER, R_TRIGGER, SETTING1, SETTING2, BUTTONS
+        :type indices: int
+
+        Use the controller state like this to get only left stick values::
+
+            left_stick_x, left_stick_y, = rc.controller_state(L_STICK_HOR, L_STICK_VER)
+
+        """
         try:
-            controller_state = struct.unpack("bbbbBBhhB", self.read_buffer)#!!
+            controller_state = struct.unpack("bbbbBBhhB", self.read_buffer)
         except:
             controller_state = [0]*9
         if indices:
@@ -940,6 +1106,14 @@ class RCReceiver(UARTPeripheral):
 
 
 class RCTransmitter(UARTCentral):
+    """
+    Class for a Remote control transmitter. It sends gamepad or remote control data to a receiver.
+
+    :param name: The name of the peripheral to search for and connect to. Default: "robot"
+    :type name: str
+    :param ble_handler: A BLEHandler instance. If None, a new one will be created.
+    :type ble_handler: BLEHandler
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # An empty 9-item list. Order is important.
@@ -951,6 +1125,14 @@ class RCTransmitter(UARTCentral):
         return max(min(round(n), ceiling), floor)
 
     def set_button(self, num, pressed):
+        """
+        Set a button to pressed or not pressed.
+
+        :param num: The button number to set. 1-8
+        :type num: int
+        :param pressed: True or False
+        :type pressed: bool
+        """
         if 0 < num < 9:
             bitmask = 0b1 << (num-1)
             if pressed:
@@ -959,16 +1141,43 @@ class RCTransmitter(UARTCentral):
                 self.controller_state[BUTTONS] &= ~bitmask
 
     def set_stick(self, stick, value):
+        """
+        Set a stick value. Value should be between -100 and 100.
+
+        :param stick: The stick to set. Use these constants: L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER
+        :type stick: int
+        :param value: The value to set. Should be between -100 and 100.
+        :type value: int
+        """
         self.controller_state[stick] = self.clamp_int(value)
 
     def set_trigger(self, trig, value):
+        """
+        Set a gamepad shoulder trigger value. Value should be between 0 and 200.
+
+        :param trig: The trigger to set. Use these constants: L_TRIGGER, R_TRIGGER
+        :type trig: int
+        :param value: The value to set. Should be between 0 and 200.
+        :type value: int
+        """
         self.controller_state[trig] = self.clamp_int(value,0,200)
 
-    def set_setting(self, stick, value):
-        self.controller_state[stick] = self.clamp_int(value, -2**15, 2**15)
+    def set_setting(self, setting, value):
+        """
+        Set a parameter dial setting.
 
-    # Send data over the UART
+        :param setting: The setting to set. Use these constants: SETTING1, SETTING2
+        :type setting: int
+        :param value: The value to set. Should be between -32768 and 32767.
+        :type value: int
+        """
+        self.controller_state[setting] = self.clamp_int(value, -2**15, 2**15)
+
     def transmit(self):
+        """
+        Send the controller state to the receiver.
+        This call will wait if you write again within 15ms.
+        """
         # Don't send too often.
         while ticks_diff(ticks_ms(), self.last_write) < 15:
             sleep_ms(1)
