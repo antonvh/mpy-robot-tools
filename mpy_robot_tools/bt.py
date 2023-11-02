@@ -4,9 +4,11 @@
 ## TODO
 ## Fix occasional packet loss on very large notify payloads:
 ## Maybe notify size or delay
+## Check if UART Peripheral can be done without notify, just two local characteristics and gatts_write.
 ## Write blog post about ble and uart and the misery.
 ## Improve docs and examples.
 ## Create SerialTalk example.
+## Clean up Ble_handler. Move connection code to LEGO and UART classes.
 ## Try gc.collect() in every loop?
 ## Fix mem allocation and scheduling in IRQ's:
 # Note: If schedule() is called from a preempting IRQ,
@@ -94,12 +96,10 @@ _ADV_TYPE_UUID128_COMPLETE = const(0x7)
 # _ADV_TYPE_UUID128_MORE = const(0x6)
 _ADV_TYPE_APPEARANCE = const(0x19)
 
-
+# UART
 _UART_UUID = ubluetooth.UUID("6E400001-B5A3-F393-E0A9-E50E24DCCA9E")
 _UART_TX_UUID = ubluetooth.UUID("6E400003-B5A3-F393-E0A9-E50E24DCCA9E")
 _UART_RX_UUID = ubluetooth.UUID("6E400002-B5A3-F393-E0A9-E50E24DCCA9E")
-_LEGO_SERVICE_UUID = ubluetooth.UUID("00001623-1212-EFDE-1623-785FEABCD123")
-_LEGO_SERVICE_CHAR = ubluetooth.UUID("00001624-1212-EFDE-1623-785FEABCD123")
 _UART_TX = (
     _UART_TX_UUID,
     _FLAG_NOTIFY | _FLAG_READ, # write is not really needed here.
@@ -112,6 +112,58 @@ _UART_SERVICE = (
     _UART_UUID,
     (_UART_TX, _UART_RX),
 )
+
+# LEGO
+_LEGO_SERVICE_UUID = ubluetooth.UUID("00001623-1212-EFDE-1623-785FEABCD123")
+_LEGO_SERVICE_CHAR = ubluetooth.UUID("00001624-1212-EFDE-1623-785FEABCD123")
+
+# MIDI
+MIDI_SERVICE_UUID = ubluetooth.UUID("03B80E5A-EDE8-4B33-A751-6CE34EC4C700")
+MIDI_CHAR_UUID = ubluetooth.UUID("7772E5DB-3868-4112-A1A9-F2669D106BF3")
+MIDI_CHAR = (
+    MIDI_CHAR_UUID,
+    _FLAG_NOTIFY | _FLAG_READ | _FLAG_WRITE_NO_RESPONSE, 
+)
+MIDI_SERVICE = (
+    MIDI_SERVICE_UUID,
+    (MIDI_CHAR,),
+)
+# From C3 - A and B are above G
+# Semitones     A   B   C   D   E   F   G
+NOTE_OFFSET = [21, 23, 12, 14, 16, 17, 19]
+CHORD_STYLES = { 
+    # Note (half tone) offsets from base note
+    "M": (0, 4, 7, 12), 
+    "m": (0, 3, 7, 12), 
+    "7": (0, 4, 7, 10),
+    "m7": (0, 3, 7, 10),
+    "M7": (0, 4, 7, 11),
+    "sus4": (0, 5, 7, 12),
+    "sus2": (0, 2, 7, 12),
+    "dim7": (0, 3, 6, 10),
+    }
+
+def note_parser(note):
+    # Note parser from "https://github.com/adafruit/Adafruit_CircuitPython_MIDI.git"
+    """If note is a string then it will be parsed and converted to a MIDI note (key) number, e.g.
+    "C4" will return 60, "C#4" will return 61. If note is not a string it will simply be returned.
+
+    :param note: Either 0-127 int or a str representing the note, e.g. "C#4"
+    """
+    midi_note = note
+    if isinstance(note, str):
+        if len(note) < 2:
+            raise ValueError("Bad note format")
+        noteidx = ord(note[0].upper()) - 65  # 65 os ord('A')
+        if not 0 <= noteidx <= 6:
+            raise ValueError("Bad note")
+        sharpen = 0
+        if note[1] == "#":
+            sharpen = 1
+        elif note[1] == "b":
+            sharpen = -1
+        midi_note = int(note[1 + abs(sharpen) :]) * 12 + NOTE_OFFSET[noteidx] + sharpen
+    return midi_note
 
 
 def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
@@ -228,20 +280,20 @@ class BLEHandler:
         self._ble = ubluetooth.BLE()
         self._ble.config(rxbuf=TARGET_MTU)
         self._ble.active(True)
-        self._ble.gap_disconnect(1025) # Disconnect in case of previous crash
+        try:
+            self._ble.gap_disconnect(1025) # Disconnect in case of previous crash
+        except:
+            pass
         self._ble.irq(self._irq)
         self.debug = debug
         self.log_size = 200
-
         self._reset()
-
 
     def _reset(self):
         self._connected_centrals = set()
         self._scan_result_callback = None
         self._scan_done_callback = None
         self._write_done_callbacks = {}
-        self._conn_callback = None
         self._disconn_callbacks = {}
         self._central_conn_callback = None# Used when centrals connect
         self._central_disconn_callback = None# Used when centrals disconnect
@@ -256,9 +308,9 @@ class BLEHandler:
         self._end_handle = None
         self.mtu = 20
         if self.debug:
+            # Reserve log_size bytes and track the index of the last written byte.
             self.log_data = bytearray(self.log_size)
             self.log_idx = 0
-            self.info_ref = self.info
         else:
             self.log_data = b''
 
@@ -290,7 +342,10 @@ class BLEHandler:
                 self.log_idx = 0
 
     def print_log(self):
-        for l in self.log_data.decode('utf8').split('\n'):
+        """Prints the log to the console and clears it."""
+        for l in self.log_data[self.log_idx:].decode('utf8').split('\n'):
+            print(l)
+        for l in self.log_data[:self.log_idx].decode('utf8').split('\n'):
             print(l)
         self.log_data=bytearray(self.log_size)
         self.log_idx=0
@@ -611,6 +666,63 @@ class BLEHandler:
         self._ble.gattc_write(conn_handle, desc_handle, struct.pack('<h', _NOTIFY_ENABLE), 0)
         if callback:
             self._notify_callbacks[conn_handle] = callback
+
+
+class MidiController:
+    def __init__(self, name="esp-midi", ble_handler=None):
+        if ble_handler is None:
+            self.ble_handler = BLEHandler()
+        else:
+            self.ble_handler = ble_handler
+        ((self.handle_midi,),) = self.ble_handler._ble.gatts_register_services((MIDI_SERVICE,))
+        self.ble_handler.advertise(_advertising_payload(name=name, services=[MIDI_SERVICE_UUID]))
+
+    def write_midi_msg(self, cmd, data0, data1):
+        d = bytearray(5)
+        timestamp_ms = ticks_ms()
+        d[0] = (timestamp_ms >> 7 & 0x3F) | 0x80
+        d[1] = 0x80 | (timestamp_ms & 0x7F)
+        d[2] = cmd
+        d[3] = data0
+        d[4] = data1
+        self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
+    
+    def write_midi_chord(self, cmd, data0, data1, style="M"):
+        d = bytearray(11)
+        timestamp_ms = ticks_ms()
+        d[0] = (timestamp_ms >> 7 & 0x3F) | 0x80
+        d[1] = 0x80 | (timestamp_ms & 0x7F)
+        d[2] = cmd
+        d[3] = data0 + CHORD_STYLES[style][0]
+        d[4] = data1
+        d[5] = data0 + CHORD_STYLES[style][1]
+        d[6] = data1
+        d[7] = data0 + CHORD_STYLES[style][2]
+        d[8] = data1
+        d[9] = data0 + CHORD_STYLES[style][3]
+        d[10] = data1
+        self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
+
+    def note_on(self, note, velocity):
+        self.write_midi_msg(0x90, note, velocity )
+
+    def note_off(self, note, velocity=0):
+        self.write_midi_msg(0x80, note, velocity )
+        
+    def control_change(self, control, value):
+        self.write_midi_msg(0xB0, control, value)
+        
+    def chord_on(self, base, velocity, style="M"):
+        self.write_midi_chord(0x90, note_parser(base), velocity, style)
+
+    def chord_off(self, base, velocity=0, style="M"):
+        self.write_midi_chord(0x80, note_parser(base), velocity, style)
+
+    def play_chord(self, base, style="M", duration=1000):
+        self.chord_on(base, 100, style)
+        sleep_ms(duration*7//10)
+        self.chord_off(base, 100, style)
+        sleep_ms(duration*3//10)
 
 
 class BleUARTBase:
