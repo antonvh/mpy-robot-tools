@@ -1076,13 +1076,13 @@ class RCReceiver(UARTPeripheral):
         right_trigger, left_setting, right_setting, buttons]
 
         :param indices: The items of the selection of controller states to return. 
-        If omitted, the whole list is returned. Use these constants: 
-        `L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER, L_TRIGGER, R_TRIGGER, 
-        SETTING1, SETTING2, BUTTONS`
+            If omitted, the whole list is returned. Use these constants: 
+            `L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER, L_TRIGGER, R_TRIGGER, 
+            SETTING1, SETTING2, BUTTONS`
         
         :type indices: int
 
-        Use the controller state like this to get only left stick values::
+        Use the controller state L_STICK indices to get only left stick values::
 
             left_stick_x, left_stick_y, = rc.controller_state(L_STICK_HOR, L_STICK_VER)
 
