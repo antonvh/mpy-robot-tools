@@ -44,7 +44,7 @@ except:
 TARGET_MTU = const(184) # Try to negotiate this packet size for UART
 MAX_NOTIFY = const(100) # Somehow notify with the full mtu is unstable. Memory issue?
 
-#: RC control data selection (list index of the data to be used)
+
 L_STICK_HOR = const(0)
 L_STICK_VER = const(1)
 R_STICK_HOR = const(2)
@@ -169,7 +169,7 @@ def note_parser(note):
     return midi_note
 
 
-def _advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
+def advertising_payload(limited_disc=False, br_edr=False, name=None, services=None, appearance=0):
     """
     Generate advertising payload.
 
@@ -318,11 +318,13 @@ class BLEHandler:
             self.log_data = b''
 
     def info(self, *messages):
-        """Saves messages to the log if debug is enabled. 
+        """
+        Saves messages to the log if debug is enabled. 
+
         :param messages: Messages to save to the log
         :type messages: str
-        :return: None
-        :rtype: None
+
+
         :Example:
 
         .. code-block:: python
@@ -713,7 +715,7 @@ class MidiController:
         else:
             self.ble_handler = ble_handler
         ((self.handle_midi,),) = self.ble_handler._ble.gatts_register_services((MIDI_SERVICE,))
-        self.ble_handler.advertise(_advertising_payload(name=name, services=[MIDI_SERVICE_UUID]))
+        self.ble_handler.advertise(advertising_payload(name=name, services=[MIDI_SERVICE_UUID]))
 
     def write_midi_msg(self, cmd, data0, data1):
         """
@@ -921,7 +923,7 @@ class UARTPeripheral(BleUARTBase):
             )
 
         # self.connected_centrals = set() # Sets cannot have duplicate items.
-        self.ble_handler.advertise(_advertising_payload(name=self.name, services=[_UART_UUID]))
+        self.ble_handler.advertise(advertising_payload(name=self.name, services=[_UART_UUID]))
 
     def is_connected(self):
         return len(self.ble_handler._connected_centrals)
