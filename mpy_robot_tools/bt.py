@@ -561,33 +561,6 @@ class BLEHandler:
             for conn_handle in self._connected_centrals:
                 self._ble.gatts_notify(conn_handle, val_handle, data)
 
-    def register_uart_service(self, on_write=None, on_connect=None, on_disconnect=None):
-        # TODO: make this part of the UARTPeripheral class
-        ((handle_tx, handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
-
-        self.on_write(handle_rx, on_write)
-        self._central_conn_callback = on_connect
-        self._central_disconn_callback = on_disconnect
-
-        # Characteristics and descriptors have a default maximum size of 20 bytes.
-        # Anything written to them by a client will be truncated to this length.
-        # However, any local write will increase the maximum size, so if you want
-        # to allow larger writes from a client to a given characteristic,
-        # use gatts_write after registration.
-
-        # Increase buffer size to fit MTU
-        self._ble.gatts_set_buffer(handle_rx, TARGET_MTU)
-        # self._ble.gatts_set_buffer(handle_tx, 200) #tx is handle with notify. No buffer.
-
-        # Stretch buffer
-        self._ble.gatts_write(handle_rx, bytes(TARGET_MTU))
-        # self._ble.gatts_write(handle_tx, bytes(200))
-
-        # Flush
-        _ = self._ble.gatts_read(handle_rx)
-        # _ = self._ble.gatts_read(handle_tx)
-        return handle_tx, handle_rx
-
     def scan(self):
         """
         Start scanning for BLE peripherals. Scan results will be returned in the IRQ handler.
@@ -917,10 +890,28 @@ class UARTPeripheral(BleUARTBase):
             ble_handler = BLEHandler()
         self.ble_handler = ble_handler
 
-        self._handle_tx, self._handle_rx = self.ble_handler.register_uart_service(
-            on_write = self._on_rx,
-            on_disconnect = self._on_disconnect
-            )
+        ((self._handle_tx, self._handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
+
+        self.ble_handler.on_write(self._handle_rx, self._on_rx)
+        self.ble_handler_central_disconn_callback = self._on_disconnect
+
+        # Characteristics and descriptors have a default maximum size of 20 bytes.
+        # Anything written to them by a client will be truncated to this length.
+        # However, any local write will increase the maximum size, so if you want
+        # to allow larger writes from a client to a given characteristic,
+        # use gatts_write after registration.
+
+        # Increase buffer size to fit MTU
+        self._ble.gatts_set_buffer(self._handle_rx, TARGET_MTU)
+        # self._ble.gatts_set_buffer(handle_tx, 200) #tx is handle with notify. No buffer.
+
+        # Stretch buffer
+        self._ble.gatts_write(self._handle_rx, bytes(TARGET_MTU))
+        # self._ble.gatts_write(handle_tx, bytes(200))
+
+        # Flush
+        _ = self._ble.gatts_read(self._handle_rx)
+        # _ = self._ble.gatts_read(handle_tx)
 
         # self.connected_centrals = set() # Sets cannot have duplicate items.
         self.ble_handler.advertise(advertising_payload(name=self.name, services=[_UART_UUID]))
