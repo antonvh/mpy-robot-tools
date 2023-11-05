@@ -1,0 +1,1 @@
+Simple Micropython BLE Midi demo. Run this project with Pymakr on an LMS-ESP32 from within VS Code. Then connect to SynprezFM (Android) or Garageband (Mac) to hear the chords produced.
