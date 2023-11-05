@@ -843,7 +843,7 @@ class BleUARTBase:
 
     def readline(self):
         """
-        Read a line from remote. A line is terminated with a newline character. '\n'
+        Read a line from remote. A line is terminated with a newline character. ``\\n``
         """
         data = b''
         tries = 0
@@ -862,7 +862,7 @@ class BleUARTBase:
 
     def writeline(self, data: str):
         """
-        Write data to remote and terminate with an added newline character. '\n'
+        Write data to remote and terminate with an added newline character. ``\\n``
         """
         self.write(data+"\n")
 
