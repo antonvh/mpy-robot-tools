@@ -144,6 +144,7 @@ CHORD_STYLES = {
     "sus4": (0, 5, 7, 12),
     "sus2": (0, 2, 7, 12),
     "dim7": (0, 3, 6, 10),
+    "P": (0,7,12,19), # Power chord
     }
 
 def note_parser(note):
@@ -679,13 +680,13 @@ class MidiController:
     :param ble_handler: A BLEHandler instance. If None, a new one will be created.
     :type ble_handler: BLEHandler
     """
-    def __init__(self, name="antons-mindstorms-midi", ble_handler=None):
+    def __init__(self, name="amh-midi", ble_handler=None):
         if ble_handler is None:
             self.ble_handler = BLEHandler()
         else:
             self.ble_handler = ble_handler
         ((self.handle_midi,),) = self.ble_handler._ble.gatts_register_services((MIDI_SERVICE,))
-        self.ble_handler.advertise(advertising_payload(name=name, services=[MIDI_SERVICE_UUID]))
+        self.ble_handler.advertise(advertising_payload(name=name[:8], services=[MIDI_SERVICE_UUID]))
 
     def write_midi_msg(self, cmd, data0, data1):
         """
