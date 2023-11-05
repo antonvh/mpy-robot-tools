@@ -661,11 +661,8 @@ class BLEHandler:
             self._ble.gattc_write(conn_handle, self._lego_value_handle, value, 1 if response else 0)
             self.info("GATTC Written ", value)
 
-    def connect(self, addr_type, addr):
-        self._ble.gap_connect(addr_type, addr)
 
-    def disconnect(self, conn_handle):
-        self._ble.gap_disconnect(conn_handle)
+
 
     def enable_notify(self, conn_handle, desc_handle, callback=None):
         self._ble.gattc_write(conn_handle, desc_handle, struct.pack('<h', _NOTIFY_ENABLE), 0)
@@ -993,7 +990,7 @@ class UARTCentral(BleUARTBase):
 
     def disconnect(self):
         if self.is_connected():
-            self.ble_handler.disconnect(self._conn_handle)
+            self.ble_handler._ble.gap_disconnect(self._conn_handle)
 
     def write(self, data):
         """
@@ -1074,10 +1071,15 @@ class RCReceiver(UARTPeripheral):
 
     def controller_state(self, *indices):
         """
-        Returns the controller state as a list of 9 integers: [left_stick_x, left_stick_y, right_stick_x, right_stick_y, left_trigger, right_trigger, left_setting, right_setting, buttons]
+        Returns the controller state as a list of 9 integers: 
+        [left_stick_x, left_stick_y, right_stick_x, right_stick_y, left_trigger, 
+        right_trigger, left_setting, right_setting, buttons]
 
-        :param indices: The items of the controller state to return. 
-        If omitted, the whole list is returned. Use these constants: L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER, L_TRIGGER, R_TRIGGER, SETTING1, SETTING2, BUTTONS
+        :param indices: The items of the selection of controller states to return. 
+        If omitted, the whole list is returned. Use these constants: 
+        `L_STICK_HOR, L_STICK_VER, R_STICK_HOR, R_STICK_VER, L_TRIGGER, R_TRIGGER, 
+        SETTING1, SETTING2, BUTTONS`
+        
         :type indices: int
 
         Use the controller state like this to get only left stick values::
