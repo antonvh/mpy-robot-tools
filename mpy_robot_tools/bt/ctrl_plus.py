@@ -1,6 +1,6 @@
 import struct
 try:
-    from .bt import BLEHandler
+    from . import BLEHandler
     from micropython import const
     from time import sleep_ms
 except:

@@ -23,7 +23,7 @@ from time import sleep_ms
 # Prepare a bluetooth handler so both the smarthub and
 # the receiver can use the same handler
 from mpy_robot_tools.bt import BLEHandler
-from mpy_robot_tools.ctrl_plus import SmartHub
+from mpy_robot_tools.bt.ctrl_plus import SmartHub
 from mpy_robot_tools.np_animation import *
 
 ble=BLEHandler()
