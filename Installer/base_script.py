@@ -16,6 +16,7 @@ VERBOSE = False
 from ubinascii import hexlify, a2b_base64
 from uhashlib import sha256
 from os import mkdir
+import gc
 
 encoded = {}
 
@@ -50,6 +51,7 @@ for file, code, hash_gen in encoded:
             for chunk in code:
                 f.write(a2b_base64(chunk))
         del code
+        gc.collect()
 
         try:
             if VERBOSE:
