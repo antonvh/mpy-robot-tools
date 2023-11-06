@@ -1,14 +1,19 @@
+### Bluetooth Low Energy (BLE) connection and communication tools 
+### for MINDSTORMS robots and LMS-ESP32
+### Supports Midi, Nordic UART, BLE Remote app, and LEGO Protocol: LPF2/LPUP/CTRL-PLUS.
+
+### (c) 2023 Anton's Mindstorms & Ste7an
+
 # Warning! This does NOT work on SPIKE Prime firmware.
 # Flash your SPIKE Prime with MINDSTORMS firmware if you want to use bluetooth.
+# See https://docs.antonsmindstorms.com for tutorial and explanation.
 
 ## TODO
 ## Fix occasional packet loss on very large notify payloads:
 ## Maybe notify size or delay
-## Check if UART Peripheral can be done without notify, just two local characteristics and gatts_write.
 ## Write blog post about ble and uart and the misery.
-## Improve docs and examples.
 ## Create SerialTalk example.
-## Clean up Ble_handler. Move connection code to LEGO and UART classes.
+## Clean up Ble_handler: Move connection code to LEGO and UART classes.
 ## Try gc.collect() in every loop?
 ## Fix mem allocation and scheduling in IRQ's:
 # Note: If schedule() is called from a preempting IRQ,
@@ -25,17 +30,13 @@ try:
     from micropython import const, schedule, alloc_emergency_exception_buf
     import ubluetooth
     import struct
-
     alloc_emergency_exception_buf(100)
-
-
-    # Initialize constants based on the running device
     if not 'FLAG_INDICATE' in dir(ubluetooth):
-        # We're on SPIKE Prime
-        # Old version of bluetooth
+        # We're on SPIKE Prime, old version of ubluetooth
         print("WARNING SPIKE Prime not supported for Ble. Use MINDSTORMS Firmware.")
         raise Exception("Firmware not supported")
 except:
+    # Polyfill for automated testing purposes
     class ubluetooth():
         def UUID(_):
             pass
@@ -129,6 +130,8 @@ MIDI_SERVICE = (
     MIDI_SERVICE_UUID,
     (MIDI_CHAR,),
 )
+
+# MIDI Note conversion and scales
 # From C3 - A and B are above G
 # Semitones     A   B   C   D   E   F   G
 NOTE_OFFSET = [21, 23, 12, 14, 16, 17, 19]
@@ -294,13 +297,13 @@ class BLEHandler:
         self._reset()
 
     def _reset(self):
-        self._connected_centrals = set()
+        self._connected_central = -1    # Only one central can connect. -1 is not connected.
         self._scan_result_callback = None
         self._scan_done_callback = None
         self._write_done_callbacks = {}
         self._disconn_callbacks = {}
-        self._central_conn_callback = None# Used when centrals connect
-        self._central_disconn_callback = None# Used when centrals disconnect
+        self._central_conn_callback = None      # Used when centrals connect
+        self._central_disconn_callback = None   # Used when centrals disconnect
         self._char_result_callback = None
         self._write_callbacks = {}
         self._notify_callbacks = {}
@@ -487,15 +490,14 @@ class BLEHandler:
         elif event == _IRQ_CENTRAL_CONNECT:
             conn_handle, addr_type, addr = data
             self.info("New connection ", conn_handle)
-            self._connected_centrals.add(conn_handle)
+            self._connected_central = conn_handle
             if self._central_conn_callback:
                 self._central_conn_callback(*data)
 
         elif event == _IRQ_CENTRAL_DISCONNECT:
             conn_handle, addr_type, addr = data
             self.info("Disconnected ", conn_handle)
-            if conn_handle in self._connected_centrals:
-                self._connected_centrals.remove(conn_handle)
+            self._connected_central = -1
             if self._central_disconn_callback:
                 self._central_disconn_callback(conn_handle)
 
@@ -546,9 +548,9 @@ class BLEHandler:
 
     def notify(self, data, val_handle, conn_handle=None):
         """
-        Notify all connected centrals interested in the value handle,
-        with the given data.
-        Optionally notify a specific central only.
+        Notify connected central interested in the value handle,
+        with the given data. gatts_notify is similar to gatts_indicate, but has not
+        acknowledgement, and thus raises no _IRQ_GATSS_INDICATE_DONE.
 
         :param data: The data to send to the central(s).
         :type data: bytes
@@ -558,9 +560,8 @@ class BLEHandler:
         """
         if conn_handle is not None:
             self._ble.gatts_notify(conn_handle, val_handle, data)
-        else:
-            for conn_handle in self._connected_centrals:
-                self._ble.gatts_notify(conn_handle, val_handle, data)
+        elif self._connected_central >= 0:
+            self._ble.gatts_notify(self._connected_central, val_handle, data)
 
     def scan(self):
         """
@@ -707,7 +708,7 @@ class MidiController:
         d[2] = cmd
         d[3] = data0
         d[4] = data1
-        self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
+        self.ble_handler.notify(d, self.handle_midi)
     
     def write_midi_chord(self, cmd, data0, data1, style="M"):
         """
@@ -735,7 +736,7 @@ class MidiController:
         d[8] = data1
         d[9] = data0 + CHORD_STYLES[style][3]
         d[10] = data1
-        self.ble_handler._ble.gatts_write(self.handle_midi, d, True)
+        self.ble_handler.notify(d, self.handle_midi)
 
     def note_on(self, note, velocity):
         """
@@ -901,21 +902,16 @@ class UARTPeripheral(BleUARTBase):
 
         # Increase buffer size to fit MTU
         self._ble.gatts_set_buffer(self._handle_rx, TARGET_MTU)
-        # self._ble.gatts_set_buffer(handle_tx, 200) #tx is handle with notify. No buffer.
 
         # Stretch buffer
         self._ble.gatts_write(self._handle_rx, bytes(TARGET_MTU))
-        # self._ble.gatts_write(handle_tx, bytes(200))
 
         # Flush
         _ = self._ble.gatts_read(self._handle_rx)
-        # _ = self._ble.gatts_read(handle_tx)
-
-        # self.connected_centrals = set() # Sets cannot have duplicate items.
         self.ble_handler.advertise(advertising_payload(name=self.name, services=[_UART_UUID]))
 
     def is_connected(self):
-        return len(self.ble_handler._connected_centrals)
+        return self.ble_handler._connected_central >= 0
 
     def _on_disconnect(self, conn_handle):
         # Flush buffer
@@ -927,10 +923,9 @@ class UARTPeripheral(BleUARTBase):
         """
         if self.is_connected():
             try:
-                for c in self.ble_handler._connected_centrals:
-                    for i in range(0, len(data), MAX_NOTIFY):
-                        self.ble_handler.notify(data[i:i+MAX_NOTIFY], val_handle=self._handle_tx, conn_handle=c)
-                        sleep_ms(10)
+                for i in range(0, len(data), MAX_NOTIFY):
+                    self.ble_handler.notify(data[i:i+MAX_NOTIFY], val_handle=self._handle_tx)
+                    sleep_ms(10)
             except Exception as e:
                 print("Error writing:", e, data, type(data))
 
