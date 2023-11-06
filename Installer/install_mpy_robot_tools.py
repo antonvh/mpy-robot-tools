@@ -66,6 +66,7 @@ for file, code, hash_gen in encoded:
         gc.collect()
 
 del(encoded)
+gc.collect()
 
 if not error:
     print('Library written successfully. Enjoy!')
