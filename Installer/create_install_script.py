@@ -16,8 +16,8 @@ LIB = os.path.dirname(SCRIPT_DIR)+'/mpy_robot_tools/'
 MPY_LIB = SCRIPT_DIR+'/mpy/'
 INSTALLER = SCRIPT_DIR+'/install_mpy_robot_tools.py'
 BASE_SCRIPT = SCRIPT_DIR+'/base_script.py'
-SKIP_FILES = ['__pycache__', 'servo.py', 'hub_stub.py', 'np_animation.py']
-CHUNK_SIZE = 2 ** 8
+SKIP_FILES = ['__pycache__', 'servo.py', 'hub_stub.py', 'np_animation.py','sen0539.py']
+CHUNK_SIZE = 2 ** 7
 DEFAULT_INSTALL = """INSTALL = {
     'serialtalk': True,   # Symmetric UART remote procedure calling
     'bt': True,           # Bluetooth Low Energy hub to hub communication
