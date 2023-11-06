@@ -5,7 +5,7 @@ name = "pypi"
 
 [packages]
 rshell = "*"
-mpy-cross = "*"
+mpy-cross = "==1.16"
 pytest = "*"
 
 [dev-packages]
