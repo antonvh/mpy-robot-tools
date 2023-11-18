@@ -710,32 +710,27 @@ class MidiController:
         d[4] = data1
         self.ble_handler.notify(d, self.handle_midi)
     
-    def write_midi_chord(self, cmd, data0, data1, style="M"):
+    def write_midi_notes(self, notes, velocity=0, on=True, channel=0):
         """
-        Timestamps and writes a MIDI chord to the BLE GATT server.
+        Timestamps and writes multiple MIDI notes to the BLE GATT server.
 
-        :param cmd: MIDI command byte (0x90 for note on, 0x80 for note off)
-        :type cmd: byte or int
-        :param data0: MIDI data byte 0 (note number)
-        :type data0: byte or int
-        :param data1: MIDI data byte 1 (velocity)
-        :type data1: byte or int
-        :param style: Chord style. See CHORD_STYLES for possible values.
-        :type style: str
+        :param notes: list of MIDI note numbers
+        :type notes: bytearray or list of int
+        :param velocity: velocity
+        :type velocity: byte or int
+        :param on: Turn notes on if True, off if false. Default True.
+        :type on: bool
+        :param channel: MIDI Channel, default 0
+        :type channel: int
         """
-        d = bytearray(11)
+        d = bytearray(3+2*len(notes))
         timestamp_ms = ticks_ms()
         d[0] = (timestamp_ms >> 7 & 0x3F) | 0x80
         d[1] = 0x80 | (timestamp_ms & 0x7F)
-        d[2] = cmd
-        d[3] = data0 + CHORD_STYLES[style][0]
-        d[4] = data1
-        d[5] = data0 + CHORD_STYLES[style][1]
-        d[6] = data1
-        d[7] = data0 + CHORD_STYLES[style][2]
-        d[8] = data1
-        d[9] = data0 + CHORD_STYLES[style][3]
-        d[10] = data1
+        d[2] = 0x90 + channel if on else 0x80 + channel
+        for i in range(len(notes)):
+            d[3 + i*2] = notes[i]
+            d[4 + i*2] = velocity
         self.ble_handler.notify(d, self.handle_midi)
 
     def note_on(self, note, velocity):
@@ -781,13 +776,17 @@ class MidiController:
         :type velocity: byte or int
         :param style: Chord style. See CHORD_STYLES for possible values.
         """
-        self.write_midi_chord(0x90, note_parser(base), velocity, style)
+        base = note_parser(base)
+        notes = [base+offset for offset in CHORD_STYLES[style]]
+        self.write_midi_notes(notes, velocity)
 
     def chord_off(self, base, velocity=0, style="M"):
         """
         Stop playing a MIDI chord.
         """
-        self.write_midi_chord(0x80, note_parser(base), velocity, style)
+        base = note_parser(base)
+        notes = [base+offset for offset in CHORD_STYLES[style]]
+        self.write_midi_notes(notes, velocity, on=False)
 
     def play_chord(self, base, style="M", duration=1000):
         """
