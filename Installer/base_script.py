@@ -18,10 +18,6 @@ import gc
 
 encoded = {}
 
-def calc_hash(b):
-    return hexlify(sha256(b).digest()).decode()
-
-
 error = False
 try:
     mkdir('/projects/mpy_robot_tools')
