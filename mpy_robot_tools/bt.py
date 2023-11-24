@@ -558,10 +558,12 @@ class BLEHandler:
         :type val_handle: int
         :param conn_handle: The handle of the connection to notify. If None, notify all connected centrals.
         """
+        self._ble.gatts_write(val_handle, data)
+        # No send_update=True in gatts_write in the Inventor firmware, so notifying explicitly:
         if conn_handle is not None:
-            self._ble.gatts_notify(conn_handle, val_handle, data)
+            self._ble.gatts_notify(conn_handle, val_handle)
         elif self._connected_central >= 0:
-            self._ble.gatts_notify(self._connected_central, val_handle, data)
+            self._ble.gatts_notify(self._connected_central, val_handle)
 
     def scan(self):
         """

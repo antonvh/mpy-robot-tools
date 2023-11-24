@@ -17,7 +17,7 @@ MPY_LIB = SCRIPT_DIR+'/mpy/'
 INSTALLER = SCRIPT_DIR+'/install_mpy_robot_tools.py'
 BASE_SCRIPT = SCRIPT_DIR+'/base_script.py'
 SKIP_FILES = ['__pycache__', 'servo.py', 'hub_stub.py', 'np_animation.py','sen0539.py']
-CHUNK_SIZE = 2 ** 7
+CHUNK_SIZE = 2 ** 8
 
 files = [f for f in os.listdir(LIB) if f not in SKIP_FILES]
 encoded = []

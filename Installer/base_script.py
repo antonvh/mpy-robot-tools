@@ -28,10 +28,10 @@ try:
 except:
     pass
 
-for file, code, hash_gen in encoded:
-    package_name = file.split(".")[0].split("/")[0]
+for file_name, code, hash_gen in encoded:
+    package_name = file_name.split(".")[0].split("/")[0]
 
-    target_loc = '/projects/mpy_robot_tools/' + file
+    target_loc = '/projects/mpy_robot_tools/' + file_name
     if code == "dir":
         try:
             mkdir(target_loc)
@@ -40,31 +40,40 @@ for file, code, hash_gen in encoded:
             # Directory probably exists
 
     else: 
-        print('Writing ' + target_loc)
-        with open(target_loc, 'wb') as f:
-            for chunk in code:
-                f.write(a2b_base64(chunk))
-        del code
-        gc.collect()
+        try:
+            with open(target_loc, 'wb') as f:
+                for chunk in code:
+                    f.write(a2b_base64(chunk))
+            del code
+            gc.collect()
+            print(target_loc + 'written ok.')
+        except Exception as e:
+            print(e, "While writing", file_name)
+            error = True
 
         try:
             if VERBOSE:
-                print('Finished writing ' + file + ', Checking hash.')
-            result = open(target_loc, 'rb').read()
-            hash_check = calc_hash(result)
+                print('Finished writing ' + file_name + ', Checking hash.')
+            result = open(target_loc, 'rb')
+            m = sha256()
+            while 1:
+                chunk = result.read(256)
+                if not chunk: break
+                m.update(chunk)
+            hash = m.digest()
+            hash_check = hexlify(hash).decode()
             del(result)
-            
-
-            if hash_check != hash_gen:
-                print('Failed hash of .mpy on the robot: ' + hash_check)
-                error = True
-            else:
-                if VERBOSE:
-                    print('Matching hash: ', hash_gen)
+            gc.collect()
         except Exception as e:
-            print(e)
-        gc.collect()
+            print(e, "While opening file for hash check.")    
 
+        if hash_check != hash_gen:
+            print('Failed hash of ' + file_name + ': ' + hash_check)
+            error = True
+        else:
+            if VERBOSE:
+                print('Matching hash: ', hash_gen)
+        
 del(encoded)
 gc.collect()
 
