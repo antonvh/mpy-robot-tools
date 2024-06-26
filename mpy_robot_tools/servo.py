@@ -4,8 +4,19 @@ except:
     # Import failed. Not on micropython
     pass
 
-from .helpers import scale
+def scale(val, src, dst):
+    """
+    Returns the given value scaled from the scale of src to the scale of dst.
 
+    :param val: Value to scale. Ex: 75
+    :type val: int or float
+    :param src: Original range. Ex: (0.0, 99.0)
+    :type src: tuple
+    :param dst: Target range. Ex: (-1.0, +1.0)
+    :type dst: tuple
+    :return: Scaled value. Ex: 0.5
+    """
+    return (float(val - src[0]) / (src[1] - src[0])) * (dst[1] - dst[0]) + dst[0]
 
 class Servo:
     """Controls a hobby servo with 2000 microsecond pwm
