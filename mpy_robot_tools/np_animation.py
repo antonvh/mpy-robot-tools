@@ -378,14 +378,20 @@ def keyframes_dict(frames_dict, name="animation"):
 class NPAnimation():
     """Animation class that animates leds with a matrix of led positions and attached functions.
     
-    Example function matrix
-    funcs = [
-        [ [0,1,2,3,4,5], hue_shift(period=5000) ], # Set leds 0-5 to shift hues.
-        [ [13,14,16,17], switch(on=WHITE, off=OFF, name="headlights_switch") ], # Switch leds 13-17 on and off by passing a keyword argument "headlight_switch"
-        [ [12,23], indicators(name="right_indicators") ], # indicators
-        [ [15,20], indicators(name="left_indicators") ],
-        [ [18,19,21,22], brake_lights()] # tail lights. They take a 'speed' variable to light accordingly
-    ]
+    Example:
+        Here's how to define a function matrix and the call update_leds()::
+        
+            funcs = [
+                [ [0,1,2,3,4,5], hue_shift(period=5000) ], # Set leds 0-5 to shift hues.
+                [ [13,14,16,17], switch(on=WHITE, off=OFF, name="headlights_switch") ], # Switch leds 13-17 on and off by passing a keyword argument "headlight_switch"
+                [ [12,23], indicators(name="right_indicators") ], # indicators
+                [ [15,20], indicators(name="left_indicators") ],
+                [ [18,19,21,22], brake_lights()] # tail lights. They take a 'speed' keyword argument to light accordingly
+            ]
+            
+            npa=NPAnimation(funcs)
+            while True:
+                npa.update_leds(right_indicators=True, speed=5)
     
     Args:
             light_funcs (_type_): Function matrix
