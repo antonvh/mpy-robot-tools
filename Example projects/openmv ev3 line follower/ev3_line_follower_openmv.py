@@ -51,8 +51,6 @@ sensor.set_vflip(True)
 sensor.set_hmirror(True)
 
 sensor.skip_frames(time=500)  # Let new settings take affect.
-sensor.set_auto_gain(False)  # must be turned off for color tracking
-sensor.set_auto_whitebal(False)  # must be turned off for color tracking
 clock = time.clock()  # Tracks FPS.
 
 while True:
@@ -96,9 +94,7 @@ while True:
             weights[3]=0
             centroids[3]=0
 
-    # The angle of the longest line through the blob in the middle region
-    # helps determine the speed. If it is 0 (straight forward) we can go fast.
-    speed = int(250-abs(angles[1])*1.7)
+    speed = 100
 
     if any(pixels[2:4]):
         # Pixels at the very edge. Better drive carefully.
