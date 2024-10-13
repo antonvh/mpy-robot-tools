@@ -12,7 +12,7 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     Returns: A method(!) that interpolates a value between given points
 
     Arguments:
-    - scale_y: scale the y coordinates to enlarge movements or to invert them (scale_y=-1)
+    - scale: scale the y coordinates to enlarge movements or to invert them (scale=-1)
     - wrapping: True by default. If an x value is beyond the highest x value in the point list,
     wrapping will wrap the values and look back to the first coordinates.
     - accumulation: Boolean. True, by default. After each wraparound, 
