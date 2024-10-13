@@ -37,6 +37,11 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
     x_max = points[-1][0]
     x_range = x_max - x_min
 
+    if x_range == 0:
+        def zero_function(x):
+            return 0
+        return zero_function
+
     # Now rebase to x's 0 and invert values if needed
     points = [(x - x_min, scale * y) for (x, y) in points]
 
@@ -91,6 +96,8 @@ def linear_interpolation(points, wrapping=True, scale=1, accumulation=True, time
                     smooth_progress = 0
                 interpolated_y = y1 + smoothing*smooth_progress*gap + (1-smoothing)*progress*gap
                 return x_periods*accumulation_per_period + interpolated_y * scale
+
+        return 0 # Just in case
     return function
 
 def linear(factor, time_delay = 0, offset = 0):
