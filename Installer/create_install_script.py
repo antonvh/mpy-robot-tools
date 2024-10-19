@@ -6,7 +6,7 @@
 
 import binascii
 import hashlib
-import mpy_cross
+from mpy_cross_v5 import mpy_cross_compile, Arch, _run
 import os
 import time
 from functools import partial
@@ -26,14 +26,27 @@ def compile(f):
     global encoded
     out_file = f.split(".")[0] + ".mpy"
     out_file_loc = MPY_LIB + out_file
-    mpy_cross.run('-march=armv6','-O3', LIB + f, '-o', out_file_loc)
-    time.sleep(0.5)
-    with open(out_file_loc, 'rb') as mpy_file:
-        file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
+    in_file = open(LIB+f, "r")
+    in_content = in_file.read()
+    proc, mpy = mpy_cross_compile(f, in_content, optimization_level=3, arch=Arch.ARMV6)
+    # with open(out_file_loc, "wb") as mpy_file:
+    #     mpy_file.write(mpy)
+    # time.sleep(0.5)
+    # with open(out_file_loc, 'rb') as mpy_file:
+    #     file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
+    # chunks = []
+    # with open(out_file_loc, 'rb') as mpy_file:
+    #     for chunk in iter(partial(mpy_file.read, CHUNK_SIZE), b''):
+    #         chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
+    
+    # new:
+    file_hash = hashlib.sha256(mpy).hexdigest()
     chunks = []
-    with open(out_file_loc, 'rb') as mpy_file:
-        for chunk in iter(partial(mpy_file.read, CHUNK_SIZE), b''):
-            chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
+    
+    for i in range(0, len(mpy), CHUNK_SIZE):
+        chunk = mpy[i:i+CHUNK_SIZE] # If the slice ends beyond the end of the object, this gets smaller chunk. Nice.
+        chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
+    
     print(out_file, ": ", len(chunks), " chunks of ", CHUNK_SIZE)
     encoded += [(
         out_file,

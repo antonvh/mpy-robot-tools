@@ -7,7 +7,7 @@
 # 6. WAIT FOR THE TEXT TO START SCROLLING IN THE CONSOLE!! The play button will stop spinning, but the script is running!
 # 7. When there is no more text scrolling in the console, the installation is done.
 
-# Works with the LEGO SPIKE app and the LEGO MINDSTORMS app
+# Only Works with the LEGO SPIKE 2.0 LEGACY app and the LEGO MINDSTORMS app
 
 VERBOSE = False
 
@@ -42,7 +42,7 @@ for file_name, code, hash_gen in encoded:
                     f.write(a2b_base64(chunk))
             del code
             gc.collect()
-            print(target_loc + 'written ok.')
+            print(target_loc + ' written ok.')
         except Exception as e:
             print(e, "While writing", file_name)
             error = True
