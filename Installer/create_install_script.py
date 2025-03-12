@@ -28,7 +28,7 @@ def compile(f):
     out_file_loc = MPY_LIB + out_file
     in_file = open(LIB+f, "r")
     in_content = in_file.read()
-    proc, mpy = mpy_cross_compile(f, in_content, optimization_level=3, arch=Arch.ARMV6)
+    proc, mpy = mpy_cross_compile(f, in_content, optimization_level=0, arch=Arch.ARMV6)
     # with open(out_file_loc, "wb") as mpy_file:
     #     mpy_file.write(mpy)
     # time.sleep(0.5)

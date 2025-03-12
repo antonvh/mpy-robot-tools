@@ -890,7 +890,7 @@ class UARTPeripheral(BleUARTBase):
             ble_handler = BLEHandler()
         self.ble_handler = ble_handler
 
-        ((self._handle_tx, self._handle_rx),) = self._ble.gatts_register_services((_UART_SERVICE,))
+        ((self._handle_tx, self._handle_rx),) = self.ble_handler._ble.gatts_register_services((_UART_SERVICE,))
 
         self.ble_handler.on_write(self._handle_rx, self._on_rx)
         self.ble_handler_central_disconn_callback = self._on_disconnect
@@ -902,13 +902,13 @@ class UARTPeripheral(BleUARTBase):
         # use gatts_write after registration.
 
         # Increase buffer size to fit MTU
-        self._ble.gatts_set_buffer(self._handle_rx, TARGET_MTU)
+        self.ble_handler._ble.gatts_set_buffer(self._handle_rx, TARGET_MTU)
 
         # Stretch buffer
-        self._ble.gatts_write(self._handle_rx, bytes(TARGET_MTU))
+        self.ble_handler._ble.gatts_write(self._handle_rx, bytes(TARGET_MTU))
 
         # Flush
-        _ = self._ble.gatts_read(self._handle_rx)
+        _ = self.ble_handler._ble.gatts_read(self._handle_rx)
         self.ble_handler.advertise(advertising_payload(name=self.name, services=[_UART_UUID]))
 
     def is_connected(self):
