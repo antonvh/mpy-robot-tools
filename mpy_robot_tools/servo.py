@@ -46,9 +46,8 @@ class Servo:
         :param pwm: microseconds pulse width.
         :type pwm: int or float
         """
-        ONE_US = 1024 / 20000
         pwm = min(max(pwm, self.min_pulse), self.max_pulse)
-        self.servo.duty(round(pwm * ONE_US))
+        self.servo.duty_u16(int(pwm*3.2768))
 
     def angle(self, angle:float) -> None:
         """Set servo angle. Values are capped between min_angle and max_angle, as set at init.
