@@ -1,15 +1,19 @@
-#########################################
-Mpy Robot Tools api library documentation
-#########################################
+#############################
+Mpy Robot Tools documentation
+#############################
 
 About mpy_robot_tools
 =====================
 
 Mpy_robot_tools is the Swiss army knife for programming animated, interactive robots.
-It has an installer for LEGO SPIKE Prime and LEGO MINDSTORMS.
-
 The library works on esp32, SPIKE, and mindstorms EV3,  
 or any robot microcontroller that has micropython.
+
+Installation
+============
+
+- **LEGO MINDSTORMS Robot Inventor or SPIKE 2 (Legacy)**: open a new Python project in the LEGO software and paste the contents of Installer/install_mpy_robot_tools.py into it.
+- **Other micropython platforms:** Copy any of the mpy_robot_tools .py files into your project, or symlink them.
 
 Contributing
 ============
