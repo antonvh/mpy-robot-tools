@@ -14,7 +14,7 @@
 from projects.mpy_robot_tools.helpers import clamp_int
 from mindstorms import ColorSensor, Motor
 from projects.mpy_robot_tools.serialtalk import SerialTalk
-from projects.mpy_robot_tools.mshub import MSHubSerial
+from projects.mpy_robot_tools.serialtalk.mshub import MSHubSerial
 from hub import port
 
 ur = SerialTalk( MSHubSerial('D'), timeout=20)
