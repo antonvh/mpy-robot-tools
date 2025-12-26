@@ -9,6 +9,8 @@
 
 # Only Works with the LEGO SPIKE 2.0 LEGACY app and the LEGO MINDSTORMS app
 
+# Compiled on 2025-12-26 20:36:47.320116
+
 VERBOSE = False
 
 from ubinascii import hexlify, a2b_base64

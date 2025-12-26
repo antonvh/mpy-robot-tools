@@ -10,6 +10,7 @@ from mpy_cross_v5 import mpy_cross_compile, Arch, run
 import os
 import time
 from functools import partial
+from datetime import datetime
 
 SCRIPT_DIR = os.path.dirname(__file__)
 LIB = os.path.dirname(SCRIPT_DIR) + "/mpy_robot_tools/"
@@ -37,17 +38,6 @@ def compile(f):
     in_file = open(LIB + f, "r")
     in_content = in_file.read()
     proc, mpy = mpy_cross_compile(f, in_content, optimization_level=0, arch=Arch.ARMV6)
-    # with open(out_file_loc, "wb") as mpy_file:
-    #     mpy_file.write(mpy)
-    # time.sleep(0.5)
-    # with open(out_file_loc, 'rb') as mpy_file:
-    #     file_hash = hashlib.sha256(mpy_file.read()).hexdigest()
-    # chunks = []
-    # with open(out_file_loc, 'rb') as mpy_file:
-    #     for chunk in iter(partial(mpy_file.read, CHUNK_SIZE), b''):
-    #         chunks += [binascii.b2a_base64(chunk).decode('utf-8')]
-
-    # new:
     file_hash = hashlib.sha256(mpy).hexdigest()
     chunks = []
 
@@ -82,4 +72,4 @@ for f in files:
 spike_code = open(BASE_SCRIPT, "r").read()
 
 with open(INSTALLER, "w") as f:
-    f.write(spike_code.format(repr(tuple(encoded))))
+    f.write(spike_code.format(datetime.now(), repr(tuple(encoded))))
