@@ -17,3 +17,4 @@ from .btbricks import (
     SETTING1,
     SETTING2,
 )
+from .btbricks.bt import CHORD_STYLES
