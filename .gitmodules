@@ -7,3 +7,6 @@
 [submodule "Submodules/SerialTalk"]
 	path = Submodules/SerialTalk
 	url = https://github.com/antonvh/SerialTalk
+[submodule "Submodules/btbricks"]
+	path = Submodules/btbricks
+	url = https://github.com/antonvh/btbricks
