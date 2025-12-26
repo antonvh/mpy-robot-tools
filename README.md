@@ -33,7 +33,6 @@ Create synchronized motor movements, advanced animations, remote control systems
 - 🎨 **LED Animations**: Display utilities for hub LEDs and 5x5 matrix displays
 - 🔌 **SerialTalk**: Symmetrical UART/BLE/WebSocket communication for multi-hub projects
 - 🤖 **Pybricks-like API**: Familiar interface for SPIKE/MINDSTORMS hubs with SI units
-- 🎯 **HuskyLens Integration**: AI vision sensor support for object recognition and tracking
 - 🛠️ **Helper Utilities**: Scaling, clamping, interpolation, and timing functions
 - 📡 **Multiple Communication Protocols**: BLE UART, LEGO Protocol, SerialTalk, and more
 
@@ -187,13 +186,9 @@ General utility functions.
 - **`scale(val, src_range, dst_range)`** - Map values between ranges
 - **`wait_until(func, condition)`** - Conditional waiting
 
-### pyhuskylens.py
+### HuskyLens Support
 
-[HuskyLens](https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336) AI vision sensor integration.
-
-- **`HuskyLens(port)`** - Object detection, face recognition, line tracking, etc.
-- **`get_blocks()`** / **`get_arrows()`** - Retrieve detected objects
-- Supports all HuskyLens algorithms
+For HuskyLens AI vision sensor integration, see the dedicated [PyHuskyLens library](https://github.com/antonvh/PyHuskyLens) which includes a SPIKE Prime/Robot Inventor installer script.
 
 ## Example Projects
 
@@ -201,7 +196,6 @@ The `Example projects/` directory contains fully working examples:
 
 - **`rc_hotrod_car_receiver.py`** - RC car with BLE remote control
 - **`rc_snake.py`** - Multi-segment robot snake with synchronized movement
-- **`huskylens_demo.py`** - AI vision-based object tracking
 - **`ble_uart_simple_central.py`** / **`ble_uart_simple_peripheral.py`** - Hub-to-hub communication
 - **`bluepad_mecanum_wheels.py`** - Mecanum drive with gamepad control
 - **`inventor_ble_midi_guitar.py`** - MIDI instrument using hub sensors

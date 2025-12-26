@@ -23,7 +23,6 @@ SKIP_FILES = [
     "np_animation.py",
     "sen0539.py",
     ".DS_Store",
-    # "pyhuskylens.py",
 ]
 CHUNK_SIZE = 2**8
 

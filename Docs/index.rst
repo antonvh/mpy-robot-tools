@@ -25,12 +25,14 @@ be docstrings, README, or tutorials.
 Documentation of the mpy_robot_tools modules
 ============================================
 
-mpy\_robot\_tools.bt module
--------------------------
+mpy\_robot\_tools.btbricks module
+--------------------------------
+
+Bluetooth Low Energy communication library. This is a submodule from https://github.com/antonvh/btbricks
 
 .. code-block:: python
 
-   from projects.mpy_robot_tools.bt import BLEHandler, UARTCentral
+   from projects.mpy_robot_tools.btbricks import BLEHandler, UARTCentral
    from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
 
    ble = BLEHandler()
@@ -38,11 +40,7 @@ mpy\_robot\_tools.bt module
    seg_2_link = UARTCentral(ble_handler=ble)
    rcv = RCReceiver(name="snake", ble_handler=ble)
 
-
-.. automodule:: mpy_robot_tools.bt
-   :members:
-   :undoc-members:
-   :show-inheritance:
+For full documentation, see: https://github.com/antonvh/btbricks
 
 
 mpy\_robot\_tools.sen0539 module
@@ -99,16 +97,6 @@ Synchronize motor movements with keyframed animations. Great for animating walke
    :undoc-members:
    :show-inheritance:
 
-mpy\_robot\_tools.np\_animation module
---------------------------------------
-
-Animate Neopixels (ws2812) RGB leds with this module. Great for police lights, inidicator lights, knight-rider animation and more.
-
-.. automodule:: mpy_robot_tools.np_animation
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 mpy\_robot\_tools.pybricks module
 ---------------------------------
 
@@ -119,30 +107,30 @@ The Robot Inventor Python api for motors and sensors is not very comfortable. Th
    :undoc-members:
    :show-inheritance:
 
-mpy\_robot\_tools.rc module
----------------------------
+mpy\_robot\_tools.serialtalk module
+-----------------------------------
 
-Legacy module for compatibility reasons. Don't use.
+Symmetrical communication protocol for UART, BLE, and WebSocket connections. Allows remote procedure calls between devices.
 
-mpy\_robot\_tools.servo module
-------------------------------
-
-Simple module to control hobby servos on LMS-ESP32. Converts angles to 2000us PWM signals.
-
-.. automodule:: mpy_robot_tools.servo
+.. automodule:: mpy_robot_tools.serialtalk
    :members:
    :undoc-members:
    :show-inheritance:
 
-mpy\_robot\_tools.pyhuskylens module
-------------------------------------
+mpy\_robot\_tools.uartremote module
+-----------------------------------
 
-Module with Python API for a Huskylens. This uses the Huskylens serial protocol and get Image AI data.
+Legacy UART communication module. This now links to SerialTalk for backward compatibility. For new projects, use serialtalk directly.
 
-.. automodule:: pyhuskylens
+.. automodule:: mpy_robot_tools.uartremote
    :members:
    :undoc-members:
    :show-inheritance:
+
+HuskyLens Support
+-----------------
+
+For HuskyLens AI vision sensor integration, see the dedicated `PyHuskyLens library <https://github.com/antonvh/PyHuskyLens>`_ which includes a SPIKE Prime/Robot Inventor installer script.
 
 Stubs
 =====

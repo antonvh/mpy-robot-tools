@@ -1,3 +1,6 @@
+# NOTE: This example requires the PyHuskyLens library
+# Install it from: https://github.com/antonvh/PyHuskyLens
+#
 # Prints the x and y location of a detected face.
 # Click the [>_] icon to open the print output tray in the MINDSTORMS App
 # Run on a SPIKE or MINDSORMS hub with Robot Inventor Firmware.
@@ -6,12 +9,16 @@
 # Connection diagram on the SPIKE-OPENMV board.
 #  Red   X      X    Green   X
 #  Black X      X    Blue    X
-# 
+#
 #          [Wire to hub]
 #              ||||||
 
 
-from projects.mpy_robot_tools.pyhuskylens import HuskyLens, ALGORITHM_FACE_RECOGNITION, clamp_int
+from projects.mpy_robot_tools.pyhuskylens import (
+    HuskyLens,
+    ALGORITHM_FACE_RECOGNITION,
+    clamp_int,
+)
 from hub import button
 
 hl = HuskyLens("A", baud=9600, power=True)
@@ -26,4 +33,3 @@ while not button.right.is_pressed():
         face_x = blocks[0].x
         face_y = blocks[0].y
         print("Face at ", face_x, face_y)
-        
