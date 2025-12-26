@@ -316,7 +316,7 @@ class __MSHubControl:
     def run_until_stalled(self, speed, duty_limit=100):
         duty_limit = abs(duty_limit)
         self.run(speed)
-        wait(100)
+        wait(250)
         while 1:
             speed_pct, rel_pos, abs_pos, pwm = self.motor.get()
             if speed_pct == 0:
