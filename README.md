@@ -206,7 +206,7 @@ The `Example projects/` directory contains fully working examples:
 - **`bluepad_mecanum_wheels.py`** - Mecanum drive with gamepad control
 - **`inventor_ble_midi_guitar.py`** - MIDI instrument using hub sensors
 
-Browse the [Example projects](Example%20projects/) folder for more inspiration!
+Browse the `Example projects/` folder for more inspiration!
 
 ## Documentation
 
