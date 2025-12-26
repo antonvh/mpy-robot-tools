@@ -1,2 +1,33 @@
+# Byte-compiled / optimized / DLL files
 __pycache__*
+*.py[cod]
+*$py.class
+*.so
+
+# Testing
 .pytest_cache*
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Pipenv
+Pipfile.lock

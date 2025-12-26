@@ -1,113 +1,267 @@
-# Micropython robot tools #
+<div align="center">
+<img alt="mpy-robot-tools logo" src="https://raw.githubusercontent.com/antonvh/mpy-robot-tools/master/Images/mpy_robot_tools.png" width="200">
 
-This is a collection of classes and methods that help you to animate robots. They are specifically aimed at LEGO MINDSTORMS and SPIKE Prime robots, although the classes are abstract enough to be useful elsewhere. The functionality is documented inside the code. Here are just the main usages. For in-depth articles see my blog on [antonsmindstorms.com](https://antonsmindstorms.com).
+# mpy-robot-tools
 
-## Installation ##
+[![License](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](LICENSE.md)
+[![MicroPython](https://img.shields.io/badge/MicroPython-compatible-orange.svg)](https://micropython.org/)
+[![LEGO](https://img.shields.io/badge/LEGO-SPIKE%20%7C%20MINDSTORMS-yellow.svg)](https://education.lego.com/)
 
-1. Copy the code from the [install script](Installer/install_mpy_robot_tools.py) ([click the Copy raw contents button](https://github.blog/changelog/2021-09-20-quickly-copy-the-contents-of-a-file-to-the-clipboard/))  to an empty python project in the LEGO MINDSTORMS or LEGO SPIKE program.
-2. Then run it once, it will take additional time to transfer to the Hub please use patience.
-3. UNPLUG The hub before it completes the restart after the script!! Watch the console output for action to unplug.
+A comprehensive collection of MicroPython libraries and tools for building advanced LEGO robots. Designed for **LEGO SPIKE Prime**, **MINDSTORMS Robot Inventor**, and **ESP32-based** robotics projects.
 
-Caution if the Spike/Mindstorm app asks for a firmware update, and you accept you will need to re-install. You can just disconnect and ignore the update the Hub will be in a "big square" for waiting for update just long press the center button and power cycle the hub to reconect to the lego app, it won't ask a second time to update in the instance.
+</div>
 
-### Uninstall ###
+Create synchronized motor movements, advanced animations, remote control systems, and more with this powerful robotics toolkit. For in-depth articles and tutorials, visit [antonsmindstorms.com](https://antonsmindstorms.com).
 
-To uninstall remove the directory out of the /projects folder using a script, or something like ThonnyIDE File manager. 
+## Table of Contents
 
-To factory reset your hub to factory settings, using LEGO app, press the Hub Connection Icon on the Programming Canvas, press the More Button (···) in the Dashboard tab and select Reset Settings. Press OK to confirm the reset, or Cancel to keep the current settings. Be careful - resetting your Hub will delete all of your programs, and they can’t be recovered!
+- [Features](#features)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Core Libraries](#core-libraries)
+- [Example Projects](#example-projects)
+- [Documentation](#documentation)
+- [Supported Platforms](#supported-platforms)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
 
-## Overview of the libraries ##
+## Features
 
-### motor_sync.py ###
+- 🎮 **Remote Control**: BLE RC transmitter/receiver with gamepad-like controls via [btbricks](https://github.com/antonvh/btbricks)
+- ⚙️ **Motor Synchronization**: Advanced motor coordination with animation curves and timing functions
+- 🎨 **LED Animations**: Display utilities for hub LEDs and 5x5 matrix displays
+- 🔌 **SerialTalk**: Symmetrical UART/BLE/WebSocket communication for multi-hub projects
+- 🤖 **Pybricks-like API**: Familiar interface for SPIKE/MINDSTORMS hubs with SI units
+- 🎯 **HuskyLens Integration**: AI vision sensor support for object recognition and tracking
+- 🛠️ **Helper Utilities**: Scaling, clamping, interpolation, and timing functions
+- 📡 **Multiple Communication Protocols**: BLE UART, LEGO Protocol, SerialTalk, and more
 
-- AMHTimer() - This is a timer class that returns milliseconds by default.
-- Mechanism(motors, time_functions) - Calculates pwms based on motor functions.
-- sine_wave(), linear(), linear_interpolation() - The function return functions for use in the Mechanism Class
+## Installation
 
-### light.py ###
+### On SPIKE Prime / MINDSTORMS Robot Inventor
 
-- image_99(int) - Returns a 5x5 matrix display hub.Image to show numbers up to 99 in one screen.
+1. Copy the code from the [install script](Installer/install_mpy_robot_tools.py) ([use the Copy raw contents button](https://github.blog/changelog/2021-09-20-quickly-copy-the-contents-of-a-file-to-the-clipboard/))
+2. Paste into an empty Python project in the LEGO SPIKE/MINDSTORMS app
+3. Run the script once (installation takes ~1 minute)
+4. **IMPORTANT**: Watch the console output and unplug the hub when prompted before restart completes
 
-### bt.py ###
+> **Note**: If the app requests a firmware update, you can safely ignore it. Accepting the update will require reinstallation. To exit the update prompt, long-press the center button and power cycle the hub.
 
-- BLEHandler() - Base Bluetooth Low Energy handler
-- UARTCentral() - Connects to UARTPeripheral and implements read() and write() like serial uart.
-- UARTPeripheral() - Waits for a connection from UARTCentral and implements read() and write() like serial uart.
+### Uninstall
 
-By default the UART objects are buffered. They will remember everything ever written to them and you should flush their buffer with `_ = read()` to start clean. For remote control and state communication the buffer gets in the way. You just want to read the most recent state when it arrives. In that case initialize with `additive_buffer=False`
-Example:
+To uninstall, remove the `/projects/mpy_robot_tools/` directory using a script or file manager (like Thonny IDE).
 
-``` python
-# Create link to the snake head, and advertise self as tail.
-head_link = UARTPeripheral(name="tail", additive_buffer=False)
+For a complete factory reset: In the LEGO app, click **Hub Connection Icon** → **More (···)** → **Reset Settings** → **OK**.
+
+⚠️ **Warning**: Factory reset deletes all programs permanently!
+
+## Quick Start
+
+### Synchronized Motor Animation
+
+```python
+from projects.mpy_robot_tools.motor_sync import Mechanism, linear_interpolation
+from projects.mpy_robot_tools.pybricks import Motor, Port
+
+# Define motors
+left = Motor(Port.A)
+right = Motor(Port.B)
+
+# Create animation with keyframes: (time_ms, angle_degrees)
+movement = linear_interpolation([
+    (0, 0),
+    (1000, 180),
+    (2000, 0)
+])
+
+# Run synchronized mechanism
+mech = Mechanism([left, right], [movement, movement])
+mech.start_loop(duration=2000)
 ```
 
-If you have multiple Bluetooth objects, like a remote control, a serialtalk and a plain UART, you need to pass a single BLEHandler to all of them:
+### Remote Control Robot
 
-``` python
-from projects.mpy_robot_tools.bt import BLEHandler, UARTCentral
-from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR, SETTING2
+```python
+from projects.mpy_robot_tools.rc import RCReceiver, R_STICK_VER, L_STICK_HOR
+from projects.mpy_robot_tools.pybricks import Motor, Port
 
-ble = BLEHandler()
-seg_1_link = UARTCentral(ble_handler=ble)
-seg_2_link = UARTCentral(ble_handler=ble)
-rcv = RCReceiver(name="snake", ble_handler=ble)
+# Setup motors and RC receiver
+left_motor = Motor(Port.A)
+right_motor = Motor(Port.B)
+rcv = RCReceiver(name="myrobot")
+
+print("Waiting for RC connection...")
+while True:
+    if rcv.is_connected():
+        # Get joystick values (-100 to 100)
+        throttle = rcv.controller_state(R_STICK_VER)
+        steering = rcv.controller_state(L_STICK_HOR)
+        
+        # Tank drive control
+        left_motor.dc(throttle + steering)
+        right_motor.dc(throttle - steering)
 ```
 
+### Display Number on Hub LED Matrix
 
-### rc.py ###
+```python
+from projects.mpy_robot_tools.light import image_99
+from hub import display
 
-- Use the [MINDSTORMS Ble RC Anroid app](https://play.google.com/store/apps/details?id=com.antonsmindstorms.mindstormsrc) or another Smart Hub to [remote control your robot](https://gist.github.com/antonvh/1f1d9c563268b4a8e9e1d7297e62ad53) or [Hot Rod](https://gist.github.com/antonvh/88548d95e771043662f038de451e28f2)
+# Display numbers up to 99 on the 5x5 matrix
+display.show(image_99(42))
+```
 
-- Example
+### Multi-Hub Communication with SerialTalk
 
-  ``` python
-  # RCReceiver() - Receives RC commands from the android app or RCTransmitter class.
-  rcv = RCReceiver(name="snake")
-  while rcv.is_connected():
-      speed, turn, delay_setting = rcv.controller_state(R_STICK_VER, L_STICK_HOR, SETTING2)
-  ```
+```python
+from projects.mpy_robot_tools.serialtalk import SerialTalk
+from hub import port
 
-  ``` python
-  # RCTransmitter() - Connects to an RCReceiver and transmits the state of 9 gamepad-like controls.
-  remote_control = RCTransmitter()
-  remote_control.connect(name="snake")
-  remote_control.set_stick(L_STICK_HOR, steer_angle )
-  remote_control.set_stick(R_STICK_VER, forward)
-  remote_control.transmit()
-  ```
+# Initialize SerialTalk on a UART port
+talk = SerialTalk(port.A)
 
-### rctrl_plus.py ###
+# Define a callable function
+@talk.call
+def set_motor_speed(speed):
+    print(f"Setting motor to {speed}")
+    # Your motor control code here
 
-- SmartHub() - Connects to a Technic smart hub and is able to control connected devices and read the states of the IMU and connected motors.
+# Main loop - handle incoming commands
+while True:
+    talk.process()  # Non-blocking command processor
+```
 
-### pyhuskylens.py ###
+## Core Libraries
 
-- HuskyLens() - [Connect to Huskylens](https://github.com/antonvh/LEGO-HuskyLenslib) over a serial port and get Image AI data.
-- clamp_int(n) - returns an an int between -100 and 100, clamping higher or lower numbers.
+### motor_sync.py
 
-### helpers.py ###
+Advanced motor synchronization and animation system.
 
-- clamp_int(n) - returns an an int between -100 and 100, clamping higher or lower numbers.
-- scale(n, (source_min, source_max), (target_min, target_max)) - Returns a number scaled to a different range of numbers
+- **`Mechanism(motors, time_functions)`** - Synchronizes multiple motors using time-based functions
+- **`linear_interpolation(keyframes)`** - Creates smooth motion between keyframes
+- **`sine_wave(amplitude, period)`** - Generates sinusoidal motion
+- **`AMHTimer()`** - High-precision millisecond timer
 
-### Remote UART library: uartremote.py ###
+### pybricks.py
 
-NOTE: This is temporary. In the future I hope to replace with [serialtalk](https://github.com/antonvh/SerialTalk). It's the same idea but it also works over bluetooth and websockets.
-This is a library for robust, near real-time communication between two UART devices. We developed it with LEGO EV3, SPIKE Prime and other MicroPython (ESP) modules. The library has the following properties:
-- It is fast enough to read sensor data at 30-50Hz.
-- It is fully symmetrical, so master and slave can have the same import.
-- It includes a RAW REPL mode to upload code to a slave module. This means you can develop code for both modules in one file.
-- It is implemented in MicroPython and Arduino/C code. With arduino code, much higher sensor reading speeds are possible, but flashing is a bit less user friendly.
-- The library has a command loop to wait and listen for calls. That loop is customizable and non-blocking so you can add your own code to it.
-- The C-struct-like encoding is included in the payload, so the other side always knows how to decode it.
+Pybricks-compatible API for SPIKE Prime and MINDSTORMS Robot Inventor.
 
-Read more in the [README file of that library.](Submodules/UartRemote/README.md)
+- **`Motor(port)`** - Motor control with encoders, SI units, and async support
+- **`Port`** - Port definitions (A, B, C, D, E, F)
+- **`wait(ms)`** - Millisecond-precision wait function
+- **`UltrasonicSensor(port)`** - Distance sensing in mm/cm
 
-## To Do ##
+### btbricks (submodule)
 
-- Please fork and help out this project by adding documentation. Could be docstrings, README or tutorials.
+Bluetooth Low Energy communication library. See [btbricks documentation](https://github.com/antonvh/btbricks) for full API.
 
-### Stubs ###
+- **`UARTCentral()`** / **`UARTPeripheral()`** - Nordic UART Service for hub-to-hub communication
+- **`RCReceiver()`** / **`RCTransmitter()`** - Remote control with gamepad interface
+- **`MidiController()`** - Send MIDI over BLE
+- **`BtHub()`** - Control LEGO hubs via Bluetooth
 
-For programming convenience in VS Code I would love to collect stubs of all LEGO hub libraries. I've been looking into micropython-stubber but it didn't work for me.
+### serialtalk/
+
+Symmetrical communication protocol for UART, BLE, and WebSocket connections.
+
+- **`SerialTalk(port)`** - Remote procedure calls between devices
+- **`@talk.call`** - Decorator to expose functions for remote calling
+- Supports UART, Bluetooth, and WebSocket transports
+- Non-blocking command processing loop
+
+### light.py
+
+LED display utilities for SPIKE/MINDSTORMS hubs.
+
+- **`image_99(number)`** - Display 0-99 on 5x5 LED matrix
+- **`CONNECT_IMAGES`** - Animation frames for connection indicators
+- Custom image utilities and display helpers
+
+### helpers.py
+
+General utility functions.
+
+- **`clamp_int(n, floor, ceiling)`** - Limit values to a range
+- **`scale(val, src_range, dst_range)`** - Map values between ranges
+- **`wait_until(func, condition)`** - Conditional waiting
+
+### pyhuskylens.py
+
+[HuskyLens](https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336) AI vision sensor integration.
+
+- **`HuskyLens(port)`** - Object detection, face recognition, line tracking, etc.
+- **`get_blocks()`** / **`get_arrows()`** - Retrieve detected objects
+- Supports all HuskyLens algorithms
+
+## Example Projects
+
+The `Example projects/` directory contains fully working examples:
+
+- **`rc_hotrod_car_receiver.py`** - RC car with BLE remote control
+- **`rc_snake.py`** - Multi-segment robot snake with synchronized movement
+- **`huskylens_demo.py`** - AI vision-based object tracking
+- **`ble_uart_simple_central.py`** / **`ble_uart_simple_peripheral.py`** - Hub-to-hub communication
+- **`bluepad_mecanum_wheels.py`** - Mecanum drive with gamepad control
+- **`inventor_ble_midi_guitar.py`** - MIDI instrument using hub sensors
+
+Browse the [Example projects](Example%20projects/) folder for more inspiration!
+
+## Documentation
+
+### Full API Reference
+
+Comprehensive documentation is available at:
+
+**[docs.antonsmindstorms.com](https://docs.antonsmindstorms.com/)**
+
+### In-Code Documentation
+
+All classes and functions include detailed docstrings. Use `help()` in the REPL:
+
+```python
+from projects.mpy_robot_tools.motor_sync import Mechanism
+help(Mechanism)
+```
+
+### Tutorials and Articles
+
+Visit [antonsmindstorms.com](https://antonsmindstorms.com) for:
+
+- Step-by-step tutorials
+- Advanced techniques
+- Building instructions
+- Video demonstrations
+
+## Supported Platforms
+
+- **LEGO SPIKE Prime** (all versions)
+- **LEGO MINDSTORMS Robot Inventor** (51515)
+- **LEGO SPIKE Essential** (limited support)
+- **ESP32** with MicroPython (via [LMS-ESP32 board](https://antonsmindstorms.com/product/wifi-python-esp32-board-for-mindstorms/))
+- Other MicroPython boards with compatible peripherals
+
+## Contributing
+
+Contributions are welcome! Help improve this project by:
+
+- 📝 Adding documentation, docstrings, or tutorials
+- 🐛 Reporting bugs or issues
+- ✨ Submitting new features or examples
+- 🔧 Improving existing code
+
+Please fork the repository and submit pull requests.
+
+## License
+
+This project is licensed under the **GNU General Public License v3.0**.
+
+See [LICENSE.md](LICENSE.md) for full details.
+
+## Author
+
+**Anton Vanhoucke**
+
+- Website: [antonsmindstorms.com](https://antonsmindstorms.com)
+- GitHub: [@antonvh](https://github.com/antonvh)

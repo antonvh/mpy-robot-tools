@@ -1,1 +1,1 @@
-../Submodules/LEGO-HuskyLenslib/Library/pyhuskylens.py
+../Submodules/LEGO-HuskyLenslib/pyhuskylens/pyhuskylens.py
